@@ -1000,7 +1000,7 @@
     <div class="header-inner">
         <div class="header-top">
             <div class="logo"><i class="fa-solid fa-clapperboard"></i><span>影视文学记录</span></div>
-            <div class="header-actions">
+            <div class="header-actions"><button class="btn btn-secondary" onclick="MediaAccount.open()" id="accountButton">登录 / 注册</button>
                 <div class="view-toggle">
                     <button class="view-btn active" id="btnGrid" onclick="switchView('grid')" title="画册视图"><i class="fa-solid fa-grip"></i><span>画册</span></button>
                     <button class="view-btn" id="btnCal" onclick="switchView('calendar')" title="日历视图"><i class="fa-solid fa-calendar-days"></i><span>日历</span></button>
@@ -1015,6 +1015,7 @@
 </header>
 
 <!-- MAIN -->
+<div class="account-strip" id="accountStrip"><span id="accountState">正在连接账号…</span><div><button class="btn btn-secondary" onclick="MediaAccount.refresh()">刷新资料</button><button class="btn btn-secondary" id="importLocal" onclick="MediaAccount.importLocal()" hidden>导入本机旧记录</button></div></div>
 <main class="main">
     <!-- Toolbar (画册视图专属) -->
     <div class="toolbar" id="toolbar">
@@ -1488,6 +1489,8 @@
 <div class="heatmap-tooltip" id="heatmapTooltip"></div>
 <div class="toast" id="toast"></div>
 
+<script src="vendor/supabase.js"></script>
+<script src="supabase-config.js"></script>
 <script>
 /* ============================================================  CONSTANTS  */
 const STORAGE_KEY       = 'media_records_v1';
@@ -1586,15 +1589,15 @@ function saveRecords(arr) {
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
 /* ============================================================  STATE  */
-let records        = loadRecords();
+let records        = [];
 let currentView    = 'grid';
 let editingId      = null;
 let pendingDelId   = null;
 let ratingTouched  = false;
 let selectedGenres = [];
 let selectedCompanions = [];
-let customGenres      = (() => { try { return JSON.parse(localStorage.getItem(CUSTOM_GENRES_KEY)||'[]'); } catch { return []; } })();
-let customCompanions  = (() => { try { return JSON.parse(localStorage.getItem(CUSTOM_COMPANIONS_KEY)||'[]'); } catch { return []; } })();
+let customGenres = [];
+let customCompanions = [];
 let calDateMap        = {};   // module-level: date → [{r, type, note}]
 let filterGenreValue  = '';   // selected genre for toolbar filter
 let currentImgBase64  = '';   // image being edited in current modal session
@@ -1684,7 +1687,7 @@ function setupGenreFilter() {
 }
 
 async function init() {
-    await loadImagesFromIDB(); // 从 IDB 加载所有图片到 imgCache，再渲染
+    // Images are supplied by the signed-in account. // 从 IDB 加载所有图片到 imgCache，再渲染
     renderStats(); applyFilters(); setupGenreSelector(); setupGenreFilter(); renderCompanionFilter();
 }
 
@@ -2310,7 +2313,7 @@ function addGenre(g) {
     selectedGenres.push(g);
     if (!PREDEFINED_GENRES.includes(g) && !customGenres.includes(g)) {
         customGenres.push(g);
-        localStorage.setItem(CUSTOM_GENRES_KEY, JSON.stringify(customGenres));
+        // Custom genres are committed with the account record.
     }
     renderChips();
     document.getElementById('genreInput').value = '';
@@ -2372,7 +2375,7 @@ function addCustomCompanion() {
         showToast('该选项已存在', 'error'); input.value = ''; return;
     }
     customCompanions.push(v);
-    localStorage.setItem(CUSTOM_COMPANIONS_KEY, JSON.stringify(customCompanions));
+    // Custom companions are committed with the account record.
     selectedCompanions.push(v);
     input.value = '';
     renderCompanionPills();
@@ -4249,14 +4252,14 @@ function initDashGrid() {
             const items = dashGrid.engine.nodes.map(n => ({
                 id: n.el?.id || '', x:n.x, y:n.y, w:n.w, h:n.h
             })).filter(n => n.id);
-            localStorage.setItem(DASH_LAYOUT_KEY, JSON.stringify(items));
+            MediaAccount.saveLayout(items);
             document.getElementById('dashResetLayout')?.classList.add('visible');
         } catch {}
     });
 
     // Restore saved layout
     try {
-        const saved = JSON.parse(localStorage.getItem(DASH_LAYOUT_KEY) || 'null');
+        const saved = MediaAccount.layout();
         if (saved?.length) {
             saved.forEach(item => {
                 const el = document.getElementById(item.id);
@@ -4282,15 +4285,16 @@ function rerenderDashModule(mid) {
 }
 
 function resetDashLayout() {
-    localStorage.removeItem(DASH_LAYOUT_KEY);
+    MediaAccount.saveLayout([]);
     document.getElementById('dashResetLayout')?.classList.remove('visible');
     // Reload page to restore default positions
-    location.reload();
+    MediaAccount.resetLayout();
 }
 
 /* ============================================================  START  */
-init();
+// Account bootstrap initializes the page.
 </script>
 <script src="archive.js"></script>
+<script src="account.js"></script>
 </body>
 </html>
