@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>个人影视文学记录</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack-all.min.js" defer onerror="window._gsError=true"></script>
+    <link rel="stylesheet" href="vendor/gridstack.min.css">
+    <script src="vendor/gridstack-all.min.js" defer onerror="window._gsError=true"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer
             onerror="window._h2cFailed=true"></script>
     <style>
@@ -991,6 +991,7 @@
         #dashResetLayout:hover { background:var(--primary); }
         #dashResetLayout.visible { display:flex; }
     </style>
+    <link rel="stylesheet" href="archive.css">
 </head>
 <body>
 
@@ -1001,13 +1002,14 @@
             <div class="logo"><i class="fa-solid fa-clapperboard"></i><span>影视文学记录</span></div>
             <div class="header-actions">
                 <div class="view-toggle">
-                    <button class="view-btn active" id="btnGrid" onclick="switchView('grid')" title="画册视图"><i class="fa-solid fa-grip"></i></button>
-                    <button class="view-btn" id="btnCal" onclick="switchView('calendar')" title="日历视图"><i class="fa-solid fa-calendar-days"></i></button>
-                    <button class="view-btn" id="btnDash" onclick="switchView('dashboard')" title="数据看板"><i class="fa-solid fa-chart-pie"></i></button>
+                    <button class="view-btn active" id="btnGrid" onclick="switchView('grid')" title="画册视图"><i class="fa-solid fa-grip"></i><span>画册</span></button>
+                    <button class="view-btn" id="btnCal" onclick="switchView('calendar')" title="日历视图"><i class="fa-solid fa-calendar-days"></i><span>日历</span></button>
+                    <button class="view-btn" id="btnDash" onclick="switchView('dashboard')" title="数据看板"><i class="fa-solid fa-chart-pie"></i><span>看板</span></button>
                 </div>
                 <button class="btn btn-white" onclick="openAddModal()"><i class="fa-solid fa-plus"></i> 添加记录</button>
             </div>
         </div>
+        <div class="archive-intro"><div><div class="archive-kicker">THE PERSONAL CULTURE ARCHIVE</div><h1>把喜欢的故事，留在这里。</h1><p>从银幕到书页，记录每一次相遇与共鸣。</p></div><div class="archive-seal">A life in stories.<br>Collected by you.</div></div>
         <div class="stats-grid" id="statsGrid"></div>
     </div>
 </header>
@@ -4289,5 +4291,6 @@ function resetDashLayout() {
 /* ============================================================  START  */
 init();
 </script>
+<script src="archive.js"></script>
 </body>
 </html>
