@@ -96,3 +96,7 @@ input:focus,select:focus,textarea:focus{box-shadow:0 0 0 3px #254c4212!important
 .header-actions>.btn-white{grid-column:3;grid-row:1;justify-self:end;min-height:40px;padding:8px 20px;border-radius:100px!important}
 @media(max-width:1000px){.header-top{grid-template-columns:minmax(0,1fr) auto;column-gap:16px}.header-actions .view-toggle{grid-column:1 / -1;grid-row:2;justify-self:center}.header-actions>.btn-white{grid-column:2}.brand{max-width:440px}}
 @media(max-width:600px){.header-top{column-gap:12px;row-gap:20px}.brand-tagline{font-size:13px;max-width:240px}.header-actions>.btn-white{padding:8px 14px;font-size:12px}.header-actions .view-btn{padding:0 22px!important}.brand #accountButton{margin-left:48px}}
+/* Use the available window width with consistent outer gutters. */
+.header-inner,.main,.account-strip{width:100%;max-width:none;padding-left:32px;padding-right:32px}
+@media(max-width:1000px){.header-inner,.main,.account-strip{padding-left:24px;padding-right:24px}}
+@media(max-width:600px){.header-inner,.main,.account-strip{padding-left:16px;padding-right:16px}}
