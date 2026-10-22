@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>个人影视文学记录</title>
+    <title>幕页 · 影视文学记录</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="vendor/gridstack.min.css">
     <script src="vendor/gridstack-all.min.js" defer onerror="window._gsError=true"></script>
@@ -999,7 +999,7 @@
 <header class="header">
     <div class="header-inner">
         <div class="header-top">
-            <div class="logo"><i class="fa-solid fa-clapperboard"></i><span>影视文学记录</span></div>
+            <div class="brand"><div class="logo"><i class="fa-solid fa-clapperboard" aria-hidden="true"></i><span>幕页</span></div><p class="brand-tagline">From screen to page, recording every encounter and resonance.</p></div>
             <div class="header-actions"><button class="btn btn-secondary" onclick="MediaAccount.open()" id="accountButton">登录 / 注册</button>
                 <div class="view-toggle">
                     <button class="view-btn active" id="btnGrid" onclick="switchView('grid')" title="画册视图"><i class="fa-solid fa-grip"></i><span>画册</span></button>
@@ -1009,7 +1009,6 @@
                 <button class="btn btn-white" onclick="openAddModal()"><i class="fa-solid fa-plus"></i> 添加记录</button>
             </div>
         </div>
-        <div class="archive-intro"><div><div class="archive-kicker">THE PERSONAL CULTURE ARCHIVE</div><h1>把喜欢的故事，留在这里。</h1><p>从银幕到书页，记录每一次相遇与共鸣。</p></div><div class="archive-seal">A life in stories.<br>Collected by you.</div></div>
         <div class="stats-grid" id="statsGrid"></div>
     </div>
 </header>
