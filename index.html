@@ -987,21 +987,23 @@
         #dashResetLayout:hover { background:var(--primary); }
         #dashResetLayout.visible { display:flex; }
     </style>
-    <link rel="stylesheet" href="archive.css?v=20261027-categories">
+    <link rel="stylesheet" href="archive.css?v=20261027-sidebar">
 </head>
 <body>
 
+<aside class="side-nav" aria-label="主导航"><div class="side-brand"><div class="brand"><div class="logo"><i class="fa-solid fa-clapperboard" aria-hidden="true"></i><span>幕页</span></div><p class="brand-tagline">From screen to page, recording every encounter and resonance.</p></div></div><div class="header-actions"><nav class="view-toggle" aria-label="视图导航">
+                    <button class="view-btn active" id="btnGrid" onclick="switchView('grid')" title="画册视图"><i class="fa-solid fa-grip"></i><span>画册</span></button>
+                    <button class="view-btn" id="btnCal" onclick="switchView('calendar')" title="日历视图"><i class="fa-solid fa-calendar-days"></i><span>日历</span></button>
+                    <button class="view-btn" id="btnDash" onclick="switchView('dashboard')" title="数据看板"><i class="fa-solid fa-chart-pie"></i><span>看板</span></button>
+                </nav></div><div class="side-account"><button class="btn btn-secondary" onclick="MediaAccount.open()" id="accountButton">登录 / 注册</button></div></aside>
+<div class="app-content">
 <!-- HEADER -->
 <header class="header">
     <div class="header-inner">
         <div class="header-top">
-            <div class="brand"><div class="logo"><i class="fa-solid fa-clapperboard" aria-hidden="true"></i><span>幕页</span></div><button class="btn btn-secondary" onclick="MediaAccount.open()" id="accountButton">登录 / 注册</button><p class="brand-tagline">From screen to page, recording every encounter and resonance.</p></div>
+            
             <div class="header-actions">
-                <nav class="view-toggle" aria-label="视图导航">
-                    <button class="view-btn active" id="btnGrid" onclick="switchView('grid')" title="画册视图"><i class="fa-solid fa-grip"></i><span>画册</span></button>
-                    <button class="view-btn" id="btnCal" onclick="switchView('calendar')" title="日历视图"><i class="fa-solid fa-calendar-days"></i><span>日历</span></button>
-                    <button class="view-btn" id="btnDash" onclick="switchView('dashboard')" title="数据看板"><i class="fa-solid fa-chart-pie"></i><span>看板</span></button>
-                </nav>
+                
                 <button class="btn btn-white" onclick="openAddModal()"><i class="fa-solid fa-plus"></i> 添加记录</button>
             </div>
         </div>
@@ -1270,6 +1272,7 @@
         </div>
     </div><!-- /#dashboardView -->
 </main>
+</div><!-- app-content -->
 
 <button id="dashResetLayout" onclick="resetDashLayout()" title="重置布局">↺</button>
 <button class="fab" onclick="openAddModal()" title="添加记录"><i class="fa-solid fa-plus"></i></button>
