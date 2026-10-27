@@ -100,3 +100,6 @@ input:focus,select:focus,textarea:focus{box-shadow:0 0 0 3px #254c4212!important
 .header-inner,.main,.account-strip{width:100%;max-width:none;padding-left:32px;padding-right:32px}
 @media(max-width:1000px){.header-inner,.main,.account-strip{padding-left:24px;padding-right:24px}}
 @media(max-width:600px){.header-inner,.main,.account-strip{padding-left:16px;padding-right:16px}}
+.stats-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+@media(max-width:900px){.stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.stat-card:nth-child(4){border-left:0!important;padding-left:0}.stat-card:nth-child(5){border-left:1px solid var(--border)!important;padding-left:24px}}
+@media(max-width:600px){.stat-card:nth-child(5){padding-left:14px}}

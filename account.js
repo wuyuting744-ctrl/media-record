@@ -39,7 +39,9 @@ for(const name of ['saveRecord','confirmDelete','deleteSelected','onDrop']){
   const toast=showToast,close=closeFormModal,confirmClose=closeConfirmModal;
   const messages=[];showToast=(...m)=>messages.push(m);closeFormModal=()=>{};closeConfirmModal=()=>{};
   try{original(...args);}finally{showToast=toast;closeFormModal=close;closeConfirmModal=confirmClose;}
-  try{await MediaAccount.persist();if(name==='saveRecord')close();if(name==='confirmDelete')confirmClose();messages.forEach(m=>toast(...m));}catch(e){toast(e.message,'error');}
+  const submit=document.querySelector('#recordForm button[type="submit"]');
+  if(name==='saveRecord'&&submit)submit.disabled=true;
+  try{await MediaAccount.persist();if(name==='saveRecord'){close();document.getElementById('formModal').classList.remove('visible','open');}if(name==='confirmDelete')confirmClose();messages.forEach(m=>toast(...m));}catch(e){toast(e.message,'error');}finally{if(submit)submit.disabled=false;}
  };
 }
 for(const name of ['openAddModal','openEditModal','enterManage']){const original=window[name];window[name]=(...args)=>{try{MediaAccount.guard();original(...args);}catch(e){showToast(e.message,'error');}};}
