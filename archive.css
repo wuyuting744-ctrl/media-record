@@ -134,3 +134,18 @@ body{--nav-width:260px}
 .side-nav .header-actions .view-btn{font-size:20px!important}
 .side-account #accountButton{font-size:20px!important}
 .app-content .header-actions>.btn-white{font-size:16px!important}
+/* Sidebar text alignment and compact identity footer. */
+.side-nav{padding-left:20px;padding-right:20px}
+.side-nav .logo i,.side-nav .view-btn i{display:none}
+.side-nav .logo{gap:0}
+.side-nav .header-actions .view-btn{padding-left:0!important;padding-right:0!important;text-align:left;justify-content:flex-start;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+.side-nav .header-actions .view-btn.active{color:var(--primary)!important;font-weight:700}
+.side-account{border-top:1px solid #d5ddd1;padding-top:24px}
+.account-card{display:grid;grid-template-columns:44px minmax(0,1fr) 24px;gap:12px;align-items:center}
+.account-card button{font-family:inherit;cursor:pointer;color:var(--text);border:0;background:none;padding:0}
+.account-card .account-avatar{width:44px;height:44px;background:#e0e6d5;border-radius:50%;display:grid;place-items:center}.account-avatar svg{width:36px;height:36px}
+.side-account .account-card #accountButton{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:5px;width:100%;min-height:44px;background:none;border:0;border-radius:0!important;font-size:14px!important;text-align:left;overflow:hidden}
+#sidebarUsername{font-size:14px;font-weight:400;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sidebarConnection{font-size:12px;color:var(--text-muted);white-space:nowrap}
+.account-card .account-open{font-size:20px;min-height:36px}
+@media(max-width:700px){.side-nav{padding-left:20px;padding-right:20px}.side-account{border-top:0;padding-top:0}.account-card{grid-template-columns:36px minmax(0,1fr) 20px;gap:6px}.account-card .account-avatar{width:36px;height:36px}.side-nav .header-actions .view-btn{padding:8px 12px!important}.side-account .account-card #accountButton{padding:0}.side-brand{grid-column:1 / -1}.side-account{grid-column:1 / -1;grid-row:3;justify-self:stretch;border-top:1px solid #d5ddd1;padding-top:16px}}
