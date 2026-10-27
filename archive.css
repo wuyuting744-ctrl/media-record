@@ -149,3 +149,21 @@ body{--nav-width:260px}
 #sidebarConnection{font-size:12px;color:var(--text-muted);white-space:nowrap}
 .account-card .account-open{font-size:20px;min-height:36px}
 @media(max-width:700px){.side-nav{padding-left:20px;padding-right:20px}.side-account{border-top:0;padding-top:0}.account-card{grid-template-columns:36px minmax(0,1fr) 20px;gap:6px}.account-card .account-avatar{width:36px;height:36px}.side-nav .header-actions .view-btn{padding:8px 12px!important}.side-account .account-card #accountButton{padding:0}.side-brand{grid-column:1 / -1}.side-account{grid-column:1 / -1;grid-row:3;justify-self:stretch;border-top:1px solid #d5ddd1;padding-top:16px}}
+/* Sidebar utilities, independent filters and dashboard hierarchy. */
+@media(min-width:701px){body{--nav-width:300px}.side-nav{padding-left:60px;padding-right:20px}}
+.side-account .account-strip{width:100%;max-width:none;margin:0;padding:0 0 16px;border:0;display:flex;flex-direction:column;align-items:stretch;gap:12px;font-size:12px;overflow-wrap:anywhere}
+.side-account .account-strip>div{display:flex;flex-wrap:wrap;gap:8px}
+.side-account .account-strip .btn{font-size:12px;white-space:normal;min-height:32px}
+.toolbar{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;border-radius:0!important}
+.toolbar .search-wrap input,.toolbar select,.toolbar input[type=date],.toolbar .ss-input,.toolbar .btn{height:54px!important;min-height:54px!important;line-height:normal!important}
+.toolbar .search-wrap input,.toolbar select,.toolbar input[type=date],.toolbar .ss-input{padding-top:0!important;padding-bottom:0!important}
+.toolbar .btn{display:inline-flex;align-items:center;font-size:14px!important}
+.tag-novel{background:#dceaff!important;color:#285e9b!important}
+.tag-shortdrama{background:#f8dce8!important;color:#a3426b!important}
+.dash-card-title{font-size:20px!important}
+.dash-alert-num{font-size:20px!important}.dash-alert-label{font-size:16px!important}.dash-alert-sub{font-size:12px!important}
+.toprated-col-title{font-size:16px!important}
+.status-matrix th,.status-matrix td{font-size:16px!important;font-weight:400!important}.status-matrix th{font-weight:700!important}
+.net-info,.net-info-title,.net-info-meta,.net-legend,.net-legend-item,#gsi-network .dash-card-subtitle{font-size:12px!important}
+@media(max-width:700px){.side-nav{padding-left:60px;padding-right:20px}.side-account .account-strip{padding-bottom:16px}.side-account{width:100%}}
+.side-account .account-strip .btn{padding-left:0;padding-right:0;justify-content:flex-start;background:transparent;text-align:left}
