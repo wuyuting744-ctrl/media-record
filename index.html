@@ -2441,8 +2441,12 @@ function onRatingInput(val) {
     document.getElementById('ratingDisp').textContent = parseFloat(val)===0?'0':val;
 }
 
-function saveRecord(e) {
+async function saveRecord(e) {
     e.preventDefault();
+    const submit = document.querySelector('#recordForm button[type="submit"]');
+    try { MediaAccount.guard(); } catch (error) { showToast(error.message, 'error'); return; }
+    if (submit) { submit.disabled = true; submit.textContent = '正在保存…'; }
+    try {
     const title      = document.getElementById('fTitle').value.trim();
     const category   = document.getElementById('fCat').value;
     const status     = document.getElementById('fStatus').value;
@@ -2469,15 +2473,20 @@ function saveRecord(e) {
     if (editingId) {
         const idx = records.findIndex(r=>r.id===editingId);
         if (idx>-1) records[idx] = { ...records[idx], ...payload, updatedAt:Date.now() };
-        showToast('记录已更新','success');
+
     } else {
         records.unshift({ id:rid, ...payload, createdAt:Date.now() });
-        showToast('已添加新记录','success');
+
     }
-    saveRecords(records);
-    closeFormModal();
+    await MediaAccount.persist();
+    document.getElementById('formModal').classList.remove('visible', 'open');
+    document.getElementById('genreDropdown')?.classList.add('hidden');
+    document.getElementById('genreInputBox')?.classList.remove('focused');
     renderStats();
     applyFilters();
+    showToast(editingId ? '记录已更新' : '已添加新记录', 'success');
+    } catch (error) { showToast(error.message || '保存失败，请重试', 'error'); }
+    finally { if (submit) { submit.disabled = false; submit.textContent = '保存'; } }
 }
 
 /* ============================================================  DELETE MODAL  */
@@ -4288,6 +4297,6 @@ function resetDashLayout() {
 // Account bootstrap initializes the page.
 </script>
 <script src="archive.js?v=20261022-header"></script>
-<script src="account.js?v=20261027-save"></script>
+<script src="account.js?v=20261027-direct-save"></script>
 </body>
 </html>

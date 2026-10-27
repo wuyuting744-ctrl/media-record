@@ -31,7 +31,7 @@ window.MediaAccount = (() => {
 saveImageToIDB=(id,image)=>{imgCache[id]=image;};
 deleteImageFromIDB=id=>{delete imgCache[id];};
 saveRecords=()=>{};
-for(const name of ['saveRecord','confirmDelete','deleteSelected','onDrop']){
+for(const name of ['confirmDelete','deleteSelected','onDrop']){
  const original=window[name];
  window[name]=async function(...args){
   if(name==='saveRecord')args[0]?.preventDefault();
