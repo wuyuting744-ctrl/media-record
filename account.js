@@ -16,7 +16,24 @@ window.MediaAccount = (() => {
  const setMode=value=>{mode=value;const names={login:'登录',signup:'注册',reset:'发送重置邮件',password:'保存新密码'};document.getElementById('accountTitle').textContent=value==='login'?'登录你的档案':names[value];document.getElementById('accountSubmit').textContent=names[value];document.getElementById('accountPassword').required=!['reset'].includes(value);document.getElementById('accountPassword').hidden=value==='reset';document.getElementById('accountPassword').autocomplete=value==='login'?'current-password':'new-password';document.getElementById('accountEmail').required=value!=='password';document.getElementById('accountEmail').hidden=value==='password';document.getElementById('accountError').textContent='';document.getElementById('accountForm').hidden=!!user&&value!=='password';document.getElementById('accountSigned').hidden=!user||value==='password';document.getElementById('accountLinks').hidden=!!user;};
  async function refresh(){if(busy)return;const token=++epoch;ready=false;switchView('grid');clearFilters();try{const session=await result(client.auth.getSession());if(token!==epoch)return;user=session.session?.user||null;restore({});render();document.querySelectorAll('.modal-backdrop.open').forEach(el=>hideModal(el.id));if(manageMode)exitManage();document.getElementById('sidebarUsername').textContent=user?(user.user_metadata?.display_name||user.user_metadata?.name||user.email.split('@')[0]):'未登录';document.getElementById('sidebarConnection').textContent=user?'正在连结…':'点击登录';document.getElementById('accountIdentity').textContent=user?.email||'';if(!user){status('登录后，记录与封面将保存到你的私人账号。');document.getElementById('importLocal').hidden=true;return;}status('正在读取云端资料…');let row=await result(client.from('media_account_data').select('*').eq('user_id',user.id).maybeSingle());if(!row){await result(client.from('media_account_data').upsert({user_id:user.id},{onConflict:'user_id',ignoreDuplicates:true}));row=await result(client.from('media_account_data').select('*').eq('user_id',user.id).single());}if(token!==epoch)return;restore(row);revision=row.revision;lastGood=snapshot();render();status('已同步 · '+user.email);document.getElementById('importLocal').hidden=!localStorage.getItem(STORAGE_KEY);if(dashGrid)dashGrid.load(savedLayout.length?savedLayout:defaultLayout);ready=true;}catch(e){if(token!==epoch)return;status(errorText(e));showToast(errorText(e),'error');}}
  function guard(){if(!user||!ready){open();throw Error('请先登录并完成资料同步');}if(busy)throw Error('正在保存，请稍候');}
- async function persist(){guard();busy=true;const token=epoch;status('正在保存到账号…');try{const rows=await result(client.rpc('media_save',{p_revision:revision,p_data:snapshot()}));if(token!==epoch)return;revision=rows[0].revision;lastGood=snapshot();status('已保存 · '+user.email);}catch(e){if(lastGood)restore(lastGood);render();status('保存失败 · '+errorText(e));throw e;}finally{busy=false;}}
+ async function persist(){
+  guard();busy=true;const token=epoch;status('正在保存到账号…');
+  try{
+   const next=snapshot(),patch={};
+   for(const field of ['records','images','genres','companions','layout']){
+    if(JSON.stringify(next[field])!==JSON.stringify(lastGood?.[field]))patch[field]=next[field];
+   }
+   if(!Object.keys(patch).length){status('已保存 · '+user.email);return;}
+   patch.revision=revision+1;patch.updated_at=new Date().toISOString();
+   if(new Blob([JSON.stringify(patch)]).size>25000000)throw Error('保存请求超过25MB，请缩减封面图片');
+   const saved=await result(client.from('media_account_data').update(patch).eq('user_id',user.id).eq('revision',revision).select('revision,updated_at').maybeSingle());
+   if(!saved)throw Error('版本冲突，请刷新云端资料后重试');
+   if(token!==epoch)return;
+   revision=saved.revision;lastGood=next;status('已保存 · '+user.email);
+  }catch(e){if(token===epoch){if(lastGood)restore(clone(lastGood));render();status('保存失败 · '+errorText(e));}throw e;}
+  finally{busy=false;}
+ }
+
  function open(){setMode('login');showModal('accountModal');setTimeout(()=>document.getElementById('accountEmail').focus(),80);}
  const redirect=()=>location.origin+location.pathname;
  document.getElementById('accountForm').addEventListener('submit',async e=>{e.preventDefault();const btn=document.getElementById('accountSubmit');btn.disabled=true;const email=document.getElementById('accountEmail').value.trim(),password=document.getElementById('accountPassword').value;try{if(mode==='signup'){await result(client.auth.signUp({email,password,options:{emailRedirectTo:redirect()}}));document.getElementById('accountError').textContent='请查看验证邮件，验证后返回登录。';}else if(mode==='reset'){await result(client.auth.resetPasswordForEmail(email,{redirectTo:redirect()}));document.getElementById('accountError').textContent='若账号存在，重置邮件将发送至该邮箱。';}else if(mode==='password'){await result(client.auth.updateUser({password}));hideModal('accountModal');showToast('密码已更新');}else{await result(client.auth.signInWithPassword({email,password}));await refresh();if(ready)hideModal('accountModal');}}catch(err){document.getElementById('accountError').textContent=errorText(err);}finally{btn.disabled=false;document.getElementById('accountPassword').value='';}});

@@ -9,3 +9,5 @@
 `supabase/schema.sql` 已在现有项目执行。RLS 限制 authenticated 只能读取/插入/更新自身 user_id；匿名用户无权限。浏览器只含公开 Publishable key，登录会话由 Supabase SDK 管理。
 
 注册需验证邮箱；忘记密码通过邮件回到本站。Supabase Auth 的 Redirect URLs 包含 https://wuyuting744-ctrl.github.io/media-record/ 。
+
+保存性能：仅更新变化的 records、images、genres、companions 或 layout 字段，不发送未变化字段。文字编辑不上传封面；数据库只返回 revision 和 updated_at。records 当前仍是完整文本列表，images 仅变化时发送完整封面映射。用原64条备份测得文字保存请求约34KB，旧请求约5.7MB。使用 user_id 和 revision 条件更新，返回空行时提示版本冲突。
