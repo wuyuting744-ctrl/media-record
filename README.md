@@ -10,4 +10,10 @@
 
 注册需验证邮箱；忘记密码通过邮件回到本站。Supabase Auth 的 Redirect URLs 包含 https://wuyuting744-ctrl.github.io/media-record/ 。
 
-保存性能：仅更新变化的 records、images、genres、companions 或 layout 字段，不发送未变化字段。文字编辑不上传封面；数据库只返回 revision 和 updated_at。records 当前仍是完整文本列表，images 仅变化时发送完整封面映射。用原64条备份测得文字保存请求约34KB，旧请求约5.7MB。使用 user_id 和 revision 条件更新，返回空行时提示版本冲突。
+保存性能：执行 `supabase/incremental-save.sql` 后启用 `media_save_delta`。新增与编辑只发送变化记录，删除只发送ID，排序只发送ID列表；题材、陪看选项、布局仅在变化时发送。数据库在行锁与 revision 检查下合并变更，只返回 revision 和 updated_at。64条旧记录/约5MB封面的回归场景中，每次单条保存的数据请求小于1.5KB（封面上传独立计算）。现有 records 数组由数据库合并，未拆为逐条物理表，避免一次性迁移旧资料。
+
+新封面先在选择时压缩到最长边640px，优先WebP，再上传到私人 `media-covers` bucket，路径为用户ID/记录ID/随机文件名。记录只保存永久路径，显示时批量生成7天签名地址；改文字复用图片，不重新上传。旧内嵌封面和 images 映射继续兼容，编辑对应记录时逐步转换；旧封面不批量删除。失败仍保留表单，不显示保存成功。上传成功但后续提交失败时可能留下未引用图片，避免网络结果不确定时误删已引用封面。
+
+部署顺序：先在现有项目SQL Editor执行 `supabase/incremental-save.sql`（可重复执行，不清空账号数据），再发布前端。请勿在接口和存储空间配置完成前发布新前端，否则新增/编辑会提示配置未启用。脚本创建独立私人bucket及仅限自身用户目录的读写策略，匿名用户无权限。
+
+验证：`npm test` 覆盖数据库增量操作、版本冲突、Storage账号隔离，以及浏览器新增/编辑、图片上传与复用、失败保留表单、旧图片兼容、删除、排序和退出登录。

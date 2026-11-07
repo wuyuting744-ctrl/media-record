@@ -3,11 +3,12 @@ window.MediaAccount = (() => {
  const cfg=window.MEDIA_SUPABASE_CONFIG;
  const client=window.supabase.createClient(cfg.url,cfg.publishableKey,{auth:{storageKey:'media-account-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  const defaultLayout=[...document.querySelectorAll('#dashGrid .grid-stack-item')].map(el=>({id:el.id,x:0,y:0,w:Number(el.getAttribute('gs-w')),h:Number(el.getAttribute('gs-h'))}));
- let user=null,revision=0,savedLayout=[],ready=false,busy=false,mode='login',epoch=0,lastGood=null,legacyImages={};
+ let user=null,revision=0,savedLayout=[],ready=false,busy=false,mode='login',epoch=0,lastGood=null,legacyImages={},coverURLs={};
  const strip=document.getElementById('accountState');
  const clone=x=>JSON.parse(JSON.stringify(x));
  const snapshot=()=>{
-  const images={...imgCache};
+  const images={...legacyImages};
+  for(const record of records)if(!record.coverPath && !record.coverImg?.startsWith('data:') && imgCache[record.id])images[record.id]=imgCache[record.id];
   // New covers live with their record; leave the existing legacy image map intact.
   for(const record of records)if(record.coverImg?.startsWith('data:')){
    if(Object.prototype.hasOwnProperty.call(legacyImages,record.id))images[record.id]=legacyImages[record.id];
@@ -15,29 +16,69 @@ window.MediaAccount = (() => {
   }
   return {records:clone(records),images,genres:[...customGenres],companions:[...customCompanions],layout:clone(savedLayout)};
  };
- const restore=data=>{legacyImages={...(data.images||{})};records=data.records||[];imgCache={...(data.images||{})};for(const record of records)if(record.coverImg?.startsWith('data:'))imgCache[record.id]=record.coverImg;customGenres=data.genres||[];customCompanions=data.companions||[];savedLayout=data.layout||[];};
- const errorText=e=>/Invalid login credentials/i.test(e.message)?'邮箱或密码不正确':/Email not confirmed/i.test(e.message)?'请先验证邮箱，再登录':/schema cache|does not exist/i.test(e.message)?'云端资料表尚未初始化':e.message||'网络连接失败，请重试';
+ const restore=data=>{legacyImages={...(data.images||{})};records=data.records||[];imgCache={...(data.images||{})};for(const record of records){if(record.coverImg?.startsWith('data:'))imgCache[record.id]=record.coverImg;else if(record.coverPath)imgCache[record.id]=coverURLs[record.coverPath]||'';else if(!record.coverImg)delete imgCache[record.id];}customGenres=data.genres||[];customCompanions=data.companions||[];savedLayout=data.layout||[];};
+ async function loadCoverURLs(data){
+  const paths=[...new Set((data.records||[]).map(r=>r.coverPath).filter(Boolean))];
+  const map={};if(!paths.length)return map;
+  const urls=await result(client.storage.from('media-covers').createSignedUrls(paths,604800));
+  for(const item of urls||[])if(item.signedUrl)map[item.path]=item.signedUrl;
+  return map;
+ }
+ async function uploadChangedCovers(next){
+  const before=new Map((lastGood?.records||[]).map(r=>[r.id,r]));
+  for(const record of next.records){
+   if(JSON.stringify(record)===JSON.stringify(before.get(record.id)))continue;
+   const previous=before.get(record.id);
+   const image=record.coverImg;
+   // A signed URL belongs to an already uploaded cover; keep its permanent path.
+   if(image && previous?.coverPath && image===imgCache[record.id] && !image.startsWith('data:')){record.coverImg='__storage__';continue;}
+   if(!image){delete record.coverPath;continue;}
+   if(!image.startsWith('data:'))continue;
+   if(previous?.coverPath && image===coverURLs[previous.coverPath]){record.coverImg='__storage__';continue;}
+   status('正在上传新封面…');
+   const blob=await (await fetch(image)).blob();
+   if(blob.size>2097152)throw Error('封面超过2MB，请重新选择图片以压缩');
+   const extension=blob.type==='image/png'?'png':blob.type==='image/webp'?'webp':'jpg';
+   const path=user.id+'/'+record.id+'/'+crypto.randomUUID()+'.'+extension;
+   await result(client.storage.from('media-covers').upload(path,blob,{contentType:blob.type,upsert:false,cacheControl:'31536000'}));
+   record.coverImg='__storage__';record.coverPath=path;coverURLs[path]=image;
+  }
+ }
+ const errorText=e=>/Invalid login credentials/i.test(e.message)?'邮箱或密码不正确':/Email not confirmed/i.test(e.message)?'请先验证邮箱，再登录':/media_save_delta|Bucket not found/i.test(e.message)?'云端提速配置尚未启用，请执行 incremental-save.sql':/schema cache|does not exist/i.test(e.message)?'云端资料表尚未初始化':e.message||'网络连接失败，请重试';
  const result=async promise=>{const r=await promise;if(r.error)throw r.error;return r.data;};
  const render=()=>{renderStats();renderCompanionFilter();populateGenreFilter();applyFilters();if(currentView==='dashboard')renderDashboard();};
- const status=text=>{strip.textContent=text;const connection=document.getElementById('sidebarConnection');if(connection)connection.textContent=!user?'点击登录':/^已同步|^已保存/.test(text)?'云端已连结':/失败|冲突/.test(text)?'连结异常，请重试':text.startsWith('正在保存')?'正在保存…':'正在连结…';};
+ const status=text=>{strip.textContent=text;const connection=document.getElementById('sidebarConnection');if(connection)connection.textContent=!user?'点击登录':/^已同步|^已保存/.test(text)?'云端已连结':/失败|冲突/.test(text)?'连结异常，请重试':/^正在保存|^正在上传/.test(text)?'正在保存…':'正在连结…';};
  document.body.insertAdjacentHTML('beforeend',`<div class="modal-backdrop" id="accountModal"><div class="modal account-modal" role="dialog" aria-modal="true" aria-labelledby="accountTitle"><div class="modal-header"><h2 id="accountTitle">登录你的档案</h2><button class="btn btn-secondary" onclick="hideModal('accountModal')" aria-label="关闭">×</button></div><div class="account-body"><p id="accountHint">让故事与记录，跟随你到每一台设备。</p><form id="accountForm"><label for="accountEmail">邮箱</label><input id="accountEmail" type="email" required autocomplete="email" class="form-control"><label for="accountPassword">密码</label><input id="accountPassword" type="password" minlength="8" required autocomplete="current-password" class="form-control"><p id="accountError" role="status" aria-live="polite"></p><button class="btn btn-primary" id="accountSubmit" type="submit">登录</button></form><div id="accountLinks"><button class="btn btn-secondary" onclick="MediaAccount.mode('signup')">注册账号</button><button class="btn btn-secondary" onclick="MediaAccount.mode('reset')">忘记密码</button><button class="btn btn-secondary" onclick="MediaAccount.mode('login')">返回登录</button></div><div id="accountSigned" hidden><p id="accountIdentity"></p><button class="btn btn-secondary" onclick="MediaAccount.logout()">退出登录</button></div></div></div></div>`);
  const setMode=value=>{mode=value;const names={login:'登录',signup:'注册',reset:'发送重置邮件',password:'保存新密码'};document.getElementById('accountTitle').textContent=value==='login'?'登录你的档案':names[value];document.getElementById('accountSubmit').textContent=names[value];document.getElementById('accountPassword').required=!['reset'].includes(value);document.getElementById('accountPassword').hidden=value==='reset';document.getElementById('accountPassword').autocomplete=value==='login'?'current-password':'new-password';document.getElementById('accountEmail').required=value!=='password';document.getElementById('accountEmail').hidden=value==='password';document.getElementById('accountError').textContent='';document.getElementById('accountForm').hidden=!!user&&value!=='password';document.getElementById('accountSigned').hidden=!user||value==='password';document.getElementById('accountLinks').hidden=!!user;};
- async function refresh(){if(busy)return;const token=++epoch;ready=false;switchView('grid');clearFilters();try{const session=await result(client.auth.getSession());if(token!==epoch)return;user=session.session?.user||null;restore({});render();document.querySelectorAll('.modal-backdrop.open').forEach(el=>hideModal(el.id));if(manageMode)exitManage();document.getElementById('sidebarUsername').textContent=user?(user.user_metadata?.display_name||user.user_metadata?.name||user.email.split('@')[0]):'未登录';document.getElementById('sidebarConnection').textContent=user?'正在连结…':'点击登录';document.getElementById('accountIdentity').textContent=user?.email||'';if(!user){status('登录后，记录与封面将保存到你的私人账号。');document.getElementById('importLocal').hidden=true;return;}status('正在读取云端资料…');let row=await result(client.from('media_account_data').select('*').eq('user_id',user.id).maybeSingle());if(!row){await result(client.from('media_account_data').upsert({user_id:user.id},{onConflict:'user_id',ignoreDuplicates:true}));row=await result(client.from('media_account_data').select('*').eq('user_id',user.id).single());}if(token!==epoch)return;restore(row);revision=row.revision;lastGood=snapshot();render();status('已同步 · '+user.email);document.getElementById('importLocal').hidden=!localStorage.getItem(STORAGE_KEY);if(dashGrid)dashGrid.load(savedLayout.length?savedLayout:defaultLayout);ready=true;}catch(e){if(token!==epoch)return;status(errorText(e));showToast(errorText(e),'error');}}
+ async function refresh(){if(busy)return;const token=++epoch;ready=false;switchView('grid');clearFilters();try{const session=await result(client.auth.getSession());if(token!==epoch)return;user=session.session?.user||null;coverURLs={};lastGood=null;restore({});render();document.querySelectorAll('.modal-backdrop.open').forEach(el=>hideModal(el.id));if(manageMode)exitManage();document.getElementById('sidebarUsername').textContent=user?(user.user_metadata?.display_name||user.user_metadata?.name||user.email.split('@')[0]):'未登录';document.getElementById('sidebarConnection').textContent=user?'正在连结…':'点击登录';document.getElementById('accountIdentity').textContent=user?.email||'';if(!user){status('登录后，记录与封面将保存到你的私人账号。');document.getElementById('importLocal').hidden=true;return;}status('正在读取云端资料…');let row=await result(client.from('media_account_data').select('*').eq('user_id',user.id).maybeSingle());if(!row){await result(client.from('media_account_data').upsert({user_id:user.id},{onConflict:'user_id',ignoreDuplicates:true}));row=await result(client.from('media_account_data').select('*').eq('user_id',user.id).single());}if(token!==epoch)return;const urls=await loadCoverURLs(row);if(token!==epoch)return;coverURLs=urls;restore(row);revision=row.revision;lastGood=snapshot();render();status('已同步 · '+user.email);document.getElementById('importLocal').hidden=!localStorage.getItem(STORAGE_KEY);if(dashGrid)dashGrid.load(savedLayout.length?savedLayout:defaultLayout);ready=true;}catch(e){if(token!==epoch)return;status(errorText(e));showToast(errorText(e),'error');}}
  function guard(){if(!user||!ready){open();throw Error('请先登录并完成资料同步');}if(busy)throw Error('正在保存，请稍候');}
  async function persist(){
   guard();busy=true;const token=epoch;status('正在保存到账号…');
   try{
    const next=snapshot(),patch={};
-   for(const field of ['records','images','genres','companions','layout']){
+   await uploadChangedCovers(next);
+   const previous=new Map((lastGood?.records||[]).map(r=>[r.id,r]));
+   const ids=new Set(next.records.map(r=>r.id));
+   const upsert=next.records.filter(r=>JSON.stringify(r)!==JSON.stringify(previous.get(r.id)));
+   const deleted=[...previous.keys()].filter(id=>!ids.has(id));
+   if(upsert.length)patch.upsert=upsert;
+   if(deleted.length)patch.deleted=deleted;
+   const oldIds=(lastGood?.records||[]).map(r=>r.id).filter(id=>ids.has(id));
+   const existingIds=next.records.filter(r=>previous.has(r.id)).map(r=>r.id);
+   if(JSON.stringify(oldIds)!==JSON.stringify(existingIds) || upsert.filter(r=>!previous.has(r.id)).length>1)patch.order=next.records.map(r=>r.id);
+   for(const field of ['genres','companions','layout']){
     if(JSON.stringify(next[field])!==JSON.stringify(lastGood?.[field]))patch[field]=next[field];
    }
+   const changedImages={};for(const [id,image] of Object.entries(next.images))if(image!==lastGood?.images?.[id])changedImages[id]=image;
+   if(Object.keys(changedImages).length)patch.images=changedImages;
+   const deletedImages=Object.keys(lastGood?.images||{}).filter(id=>!Object.hasOwn(next.images,id));
+   if(deletedImages.length)patch.deletedImages=deletedImages;
    if(!Object.keys(patch).length){status('已保存 · '+user.email);return;}
-   patch.revision=revision+1;patch.updated_at=new Date().toISOString();
    if(new Blob([JSON.stringify(patch)]).size>25000000)throw Error('保存请求超过25MB，请缩减封面图片');
-   const saved=await result(client.from('media_account_data').update(patch).eq('user_id',user.id).eq('revision',revision).select('revision,updated_at').maybeSingle());
+   const saved=await result(client.rpc('media_save_delta',{p_revision:revision,p_changes:patch}).maybeSingle());
    if(!saved)throw Error('版本冲突，请刷新云端资料后重试');
    if(token!==epoch)return;
-   revision=saved.revision;legacyImages={...next.images};lastGood=next;status('已保存 · '+user.email);
+   revision=saved.revision;records=next.records;legacyImages={...next.images};lastGood=clone(next);status('已保存 · '+user.email);
   }catch(e){if(token===epoch){if(lastGood)restore(clone(lastGood));render();status('保存失败 · '+errorText(e));}throw e;}
   finally{busy=false;}
  }

@@ -1878,7 +1878,7 @@ function starsHTML(rating) {
 function cardHTML(r) {
     const genres      = (r.genres||[]).map(g=>`<span class="genre-tag">${esc(g)}</span>`).join('');
     const rating      = r.rating>0 ? `<div class="card-rating"><span class="stars">${starsHTML(r.rating)}</span><span class="rating-num">${r.rating}</span></div>` : '';
-    const thumbHTML   = imgCache[r.id] ? `<img class="card-thumb" src="${imgCache[r.id]}" alt="封面" loading="lazy">` : '';
+    const thumbHTML   = imgCache[r.id] ? `<img crossorigin="anonymous" class="card-thumb" src="${imgCache[r.id]}" alt="封面" loading="lazy">` : '';
 
     // Link only — dates not shown in cards
     const linkRow = r.link ? `<div class="card-dates"><a href="${esc(r.link)}" target="_blank" rel="noopener" class="card-link" onclick="event.stopPropagation()"><i class="fa-solid fa-arrow-up-right-from-square"></i> 链接</a></div>` : '';
@@ -2211,7 +2211,15 @@ function handleImgSelect(e) {
             const cvs = document.createElement('canvas');
             cvs.width = w; cvs.height = h;
             cvs.getContext('2d').drawImage(img, 0, 0, w, h);
-            currentImgBase64 = cvs.toDataURL('image/jpeg', 0.72);
+            // Prefer WebP; limit encoded cover size before any network upload.
+            let quality = 0.78;
+            let compressed = cvs.toDataURL('image/webp', quality);
+            const format = compressed.startsWith('data:image/webp') ? 'image/webp' : 'image/jpeg';
+            while (compressed.length > 128 * 1024 && quality > 0.45) {
+                quality -= 0.08;
+                compressed = cvs.toDataURL(format, quality);
+            }
+            currentImgBase64 = compressed;
             document.getElementById('imgThumb').src = currentImgBase64;
             document.getElementById('imgEmpty').style.display   = 'none';
             document.getElementById('imgPreview').style.display = 'block';
@@ -2472,6 +2480,7 @@ async function saveRecord(e) {
         deleteImageFromIDB(rid);
     }
     const payload  = { title, category, status, watchDates, checkIns, notes, link, rating, genres, companions, coverImg };
+    if (!coverImg) payload.coverPath = undefined;
 
     if (editingId) {
         const idx = records.findIndex(r=>r.id===editingId);
@@ -3341,6 +3350,7 @@ function _rrPath(ctx, x, y, w, h, r) {
 function _loadImg(src) {
     return new Promise(resolve => {
         const img = new Image();
+        img.crossOrigin = 'anonymous';
         img.onload  = () => resolve(img);
         img.onerror = () => resolve(null);
         img.src = src;
@@ -3894,7 +3904,8 @@ const CAT_BG    = {
     '电视剧':'rgba(200,168,212,0.45)',  /* 薰衣草紫 */
     '综艺':  'rgba(244,232,168,0.55)',  /* 柠黄     */
     '短剧':  'rgba(216,180,148,0.48)',  /* 蜜桃橙   */
-    '小说':  'rgba(168,200,180,0.48)',  /* 薄荷绿   */};
+    '小说':  'rgba(168,200,180,0.48)',  /* 薄荷绿   */
+};
 const DASH_ICON = {'电影':'🎬','电视剧':'📺','综艺':'⭐','短剧':'📱','小说':'📖'};
 
 function toDateStr(d) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
@@ -4097,7 +4108,7 @@ function renderDashTopRated() {
             </div>`;
         } else {
             const poster = imgCache[best.id]
-                ? `<img src="${imgCache[best.id]}" class="toprated-col-img" alt="封面">` : ph;
+                ? `<img crossorigin="anonymous" src="${imgCache[best.id]}" class="toprated-col-img" alt="封面">` : ph;
             cols += `<div class="toprated-col" onclick="openDetailModal('${best.id}')">
                 ${tag}${poster}
                 <div class="toprated-col-title" title="${esc(best.title)}">${esc(best.title)}</div>
@@ -4123,7 +4134,7 @@ function renderDashDetailCards() {
         return;
     }
     el.innerHTML = recs.map(r => {
-        const poster = imgCache[r.id] ? `<img src="${imgCache[r.id]}" class="detail-pcard-img" alt="封面">`
+        const poster = imgCache[r.id] ? `<img crossorigin="anonymous" src="${imgCache[r.id]}" class="detail-pcard-img" alt="封面">`
             : `<div class="detail-pcard-ph" style="background:${CAT_BG[r.category]||'#f0ece8'}">${DASH_ICON[r.category]||'🎭'}</div>`;
         const rating = r.rating > 0 ? `<div class="detail-pcard-score">${r.rating} 分</div>` : '';
         return `<div class="detail-pcard" onclick="openDetailModal('${r.id}')">
@@ -4300,6 +4311,6 @@ function resetDashLayout() {
 // Account bootstrap initializes the page.
 </script>
 <script src="archive.js?v=20261022-header"></script>
-<script src="account.js?v=20261107-edit-covers"></script>
+<script src="account.js?v=20261107-incremental-storage"></script>
 </body>
 </html>
