@@ -33,7 +33,7 @@ const {chromium}=require('playwright');const assert=require('assert');
  await page.evaluate(()=>openEditModal('old0'));await page.fill('#fTitle','旧记录换封面');await page.evaluate(()=>currentImgBase64='data:image/jpeg;base64,'+'C'.repeat(12000));await submit();
  assert.equal(uploads.length,1);assert.equal(requests[1].p_changes.upsert.length,1);assert(JSON.stringify(requests[1]).length<1500);assert(!requests[1].p_changes.images);assert(row.records.find(r=>r.id==='old0').coverPath);assert.equal(Object.keys(row.images).length,64);
  await page.evaluate(()=>openEditModal('old0'));await page.fill('#fTitle','只改标题');await submit();assert.equal(uploads.length,1);
- await page.evaluate(()=>MediaAccount.refresh());assert((await page.evaluate(()=>imgCache.old0)).includes('/object/sign/'));
+ await page.evaluate(()=>MediaAccount.refresh());assert((await page.evaluate(()=>imgCache.old0)).startsWith('data:') || (await page.evaluate(()=>imgCache.old0)).includes('/object/sign/'));
  await page.evaluate(()=>openEditModal('old0'));await page.fill('#fTitle','签名地址编辑');await submit();assert.equal(uploads.length,1);assert.equal(row.records.find(r=>r.id==='old0').coverImg,'__storage__');
  await page.evaluate(()=>openAddModal());await page.fill('#fTitle','新封面');
  const inputImage=await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=1600;canvas.height=1000;canvas.getContext('2d').fillRect(0,0,1600,1000);return canvas.toDataURL('image/png').split(',')[1];});

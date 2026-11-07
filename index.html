@@ -2683,8 +2683,8 @@ function onDragEnd(event,id) {
 }
 
 /* ============================================================  MODAL HELPERS  */
-function showModal(id) { const el=document.getElementById(id); el.classList.add('open'); requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('visible'))); }
-function hideModal(id)  { const el=document.getElementById(id); el.classList.remove('visible'); setTimeout(()=>el.classList.remove('open'),260); }
+function showModal(id) { const el=document.getElementById(id); clearTimeout(el.hideTimer); el.classList.add('open'); requestAnimationFrame(()=>requestAnimationFrame(()=>{if(el.classList.contains('open'))el.classList.add('visible');})); }
+function hideModal(id)  { const el=document.getElementById(id); clearTimeout(el.hideTimer); el.classList.remove('visible'); el.hideTimer=setTimeout(()=>el.classList.remove('open'),260); }
 
 document.querySelectorAll('.modal-backdrop').forEach(bd => {
     bd.addEventListener('click', e => {
@@ -4318,6 +4318,6 @@ function resetDashLayout() {
 // Account bootstrap initializes the page.
 </script>
 <script src="archive.js?v=20261022-header"></script>
-<script src="account.js?v=20261107-incremental-storage"></script>
+<script src="account.js?v=20261107-account-cache"></script>
 </body>
 </html>
