@@ -182,3 +182,6 @@ body{--nav-width:260px}
 .nav-glass-capsule::after{content:"";position:absolute;inset:2px;border-radius:inherit;border-top:1px solid rgba(255,255,255,.65);border-left:1px solid rgba(255,255,255,.28)}
 @media(prefers-reduced-motion:reduce){.nav-glass-capsule{will-change:auto}}
 @media(max-width:700px){.side-nav .header-actions .view-btn{font-weight:600!important}}
+.side-nav .header-actions .view-btn{gap:12px}
+.nav-line-icon{display:block;width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:700px){.side-nav .view-toggle{gap:4px}.side-nav .header-actions .view-btn{gap:6px;padding:8px 6px!important}.nav-line-icon{width:18px;height:18px}}
