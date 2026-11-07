@@ -3,16 +3,19 @@ window.MediaAccount = (() => {
  const cfg=window.MEDIA_SUPABASE_CONFIG;
  const client=window.supabase.createClient(cfg.url,cfg.publishableKey,{auth:{storageKey:'media-account-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  const defaultLayout=[...document.querySelectorAll('#dashGrid .grid-stack-item')].map(el=>({id:el.id,x:0,y:0,w:Number(el.getAttribute('gs-w')),h:Number(el.getAttribute('gs-h'))}));
- let user=null,revision=0,savedLayout=[],ready=false,busy=false,mode='login',epoch=0,lastGood=null;
+ let user=null,revision=0,savedLayout=[],ready=false,busy=false,mode='login',epoch=0,lastGood=null,legacyImages={};
  const strip=document.getElementById('accountState');
  const clone=x=>JSON.parse(JSON.stringify(x));
  const snapshot=()=>{
   const images={...imgCache};
   // New covers live with their record; leave the existing legacy image map intact.
-  for(const record of records)if(record.coverImg?.startsWith('data:'))delete images[record.id];
+  for(const record of records)if(record.coverImg?.startsWith('data:')){
+   if(Object.prototype.hasOwnProperty.call(legacyImages,record.id))images[record.id]=legacyImages[record.id];
+   else delete images[record.id];
+  }
   return {records:clone(records),images,genres:[...customGenres],companions:[...customCompanions],layout:clone(savedLayout)};
  };
- const restore=data=>{records=data.records||[];imgCache={...(data.images||{})};for(const record of records)if(record.coverImg?.startsWith('data:'))imgCache[record.id]=record.coverImg;customGenres=data.genres||[];customCompanions=data.companions||[];savedLayout=data.layout||[];};
+ const restore=data=>{legacyImages={...(data.images||{})};records=data.records||[];imgCache={...(data.images||{})};for(const record of records)if(record.coverImg?.startsWith('data:'))imgCache[record.id]=record.coverImg;customGenres=data.genres||[];customCompanions=data.companions||[];savedLayout=data.layout||[];};
  const errorText=e=>/Invalid login credentials/i.test(e.message)?'邮箱或密码不正确':/Email not confirmed/i.test(e.message)?'请先验证邮箱，再登录':/schema cache|does not exist/i.test(e.message)?'云端资料表尚未初始化':e.message||'网络连接失败，请重试';
  const result=async promise=>{const r=await promise;if(r.error)throw r.error;return r.data;};
  const render=()=>{renderStats();renderCompanionFilter();populateGenreFilter();applyFilters();if(currentView==='dashboard')renderDashboard();};
@@ -34,7 +37,7 @@ window.MediaAccount = (() => {
    const saved=await result(client.from('media_account_data').update(patch).eq('user_id',user.id).eq('revision',revision).select('revision,updated_at').maybeSingle());
    if(!saved)throw Error('版本冲突，请刷新云端资料后重试');
    if(token!==epoch)return;
-   revision=saved.revision;lastGood=next;status('已保存 · '+user.email);
+   revision=saved.revision;legacyImages={...next.images};lastGood=next;status('已保存 · '+user.email);
   }catch(e){if(token===epoch){if(lastGood)restore(clone(lastGood));render();status('保存失败 · '+errorText(e));}throw e;}
   finally{busy=false;}
  }
