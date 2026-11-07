@@ -91,8 +91,8 @@
     const width=shell.offsetWidth,height=shell.offsetHeight;if(!width||!height)return;
     const x=Math.max(0,Math.min(width,clientX-box.left-shell.offsetLeft));
     const y=Math.max(0,Math.min(height,clientY-box.top-shell.offsetTop));
-    let rx=-(y/height*2-1)*4,ry=(x/width*2-1)*4;
-    const limit=Math.max(1,Math.hypot(rx,ry)/4);rx/=limit;ry/=limit;
+    let rx=-(y/height*2-1)*2,ry=(x/width*2-1)*2;
+    const limit=Math.max(1,Math.hypot(rx,ry)/2);rx/=limit;ry/=limit;
     shell.style.setProperty('--light-x',x+'px');shell.style.setProperty('--light-y',y+'px');
     shell.style.setProperty('--tilt-x',rx.toFixed(2)+'deg');shell.style.setProperty('--tilt-y',ry.toFixed(2)+'deg');
     shell.style.setProperty('--card-light','1');shell.classList.add('glass-card-hover');
