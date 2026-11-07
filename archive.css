@@ -167,3 +167,18 @@ body{--nav-width:260px}
 .net-info,.net-info-title,.net-info-meta,.net-legend,.net-legend-item,#gsi-network .dash-card-subtitle{font-size:12px!important}
 @media(max-width:700px){.side-nav{padding-left:60px;padding-right:20px}.side-account .account-strip{padding-bottom:16px}.side-account{width:100%}}
 .side-account .account-strip .btn{padding-left:0;padding-right:0;justify-content:flex-start;background:transparent;text-align:left}
+/* One glass capsule follows the selected view without moving the labels. */
+.side-nav .view-toggle{position:relative;isolation:isolate;overflow:visible}
+.side-nav .header-actions .view-btn{position:relative;z-index:1}
+.side-nav .header-actions .view-btn:hover,.side-nav .header-actions .view-btn.active{background:transparent!important;box-shadow:none!important}
+.nav-glass-capsule{
+ position:absolute;left:0;top:0;z-index:0;pointer-events:none;box-sizing:border-box;
+ border-radius:999px;border:1px solid rgba(255,255,255,.85);
+ background:linear-gradient(145deg,rgba(255,255,255,.66),rgba(255,255,255,.24) 60%,rgba(213,229,216,.38));
+ backdrop-filter:blur(16px) saturate(145%);-webkit-backdrop-filter:blur(16px) saturate(145%);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.96),inset 0 -1px 1px rgba(92,125,105,.12),0 3px 14px rgba(44,75,56,.07),0 0 0 1px rgba(110,145,117,.08);
+ transform-origin:center;will-change:transform;
+}
+.nav-glass-capsule::after{content:"";position:absolute;inset:2px;border-radius:inherit;border-top:1px solid rgba(255,255,255,.65);border-left:1px solid rgba(255,255,255,.28)}
+@media(prefers-reduced-motion:reduce){.nav-glass-capsule{will-change:auto}}
+@media(max-width:700px){.side-nav .header-actions .view-btn{font-weight:600!important}}
