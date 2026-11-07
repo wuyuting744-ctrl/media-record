@@ -2452,6 +2452,15 @@ function onRatingInput(val) {
     document.getElementById('ratingDisp').textContent = parseFloat(val)===0?'0':val;
 }
 
+document.getElementById('fRating').addEventListener('wheel', function(e) {
+    if (e.ctrlKey || e.deltaY === 0) return;
+    e.preventDefault();
+    const direction = e.deltaY < 0 ? 1 : -1;
+    const tenths = Math.round(Number(this.value) * 10) + direction;
+    this.value = String(Math.max(0, Math.min(100, tenths)) / 10);
+    this.dispatchEvent(new Event('input', { bubbles: true }));
+}, { passive: false });
+
 async function saveRecord(e) {
     e.preventDefault();
     const submit = document.querySelector('#recordForm button[type="submit"]');
