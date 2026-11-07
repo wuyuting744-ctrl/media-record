@@ -2467,7 +2467,7 @@ async function saveRecord(e) {
     if (currentImgBase64) {
         imgCache[rid] = currentImgBase64;
         saveImageToIDB(rid, currentImgBase64);
-        coverImg = '__idb__';
+        coverImg = currentImgBase64;
     } else {
         deleteImageFromIDB(rid);
     }
@@ -4300,6 +4300,6 @@ function resetDashLayout() {
 // Account bootstrap initializes the page.
 </script>
 <script src="archive.js?v=20261022-header"></script>
-<script src="account.js?v=20261029-incremental"></script>
+<script src="account.js?v=20261107-record-covers"></script>
 </body>
 </html>

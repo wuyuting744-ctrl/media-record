@@ -6,8 +6,13 @@ window.MediaAccount = (() => {
  let user=null,revision=0,savedLayout=[],ready=false,busy=false,mode='login',epoch=0,lastGood=null;
  const strip=document.getElementById('accountState');
  const clone=x=>JSON.parse(JSON.stringify(x));
- const snapshot=()=>clone({records,images:imgCache,genres:customGenres,companions:customCompanions,layout:savedLayout});
- const restore=data=>{records=data.records||[];imgCache=data.images||{};customGenres=data.genres||[];customCompanions=data.companions||[];savedLayout=data.layout||[];};
+ const snapshot=()=>{
+  const images={...imgCache};
+  // New covers live with their record; leave the existing legacy image map intact.
+  for(const record of records)if(record.coverImg?.startsWith('data:'))delete images[record.id];
+  return {records:clone(records),images,genres:[...customGenres],companions:[...customCompanions],layout:clone(savedLayout)};
+ };
+ const restore=data=>{records=data.records||[];imgCache={...(data.images||{})};for(const record of records)if(record.coverImg?.startsWith('data:'))imgCache[record.id]=record.coverImg;customGenres=data.genres||[];customCompanions=data.companions||[];savedLayout=data.layout||[];};
  const errorText=e=>/Invalid login credentials/i.test(e.message)?'邮箱或密码不正确':/Email not confirmed/i.test(e.message)?'请先验证邮箱，再登录':/schema cache|does not exist/i.test(e.message)?'云端资料表尚未初始化':e.message||'网络连接失败，请重试';
  const result=async promise=>{const r=await promise;if(r.error)throw r.error;return r.data;};
  const render=()=>{renderStats();renderCompanionFilter();populateGenreFilter();applyFilters();if(currentView==='dashboard')renderDashboard();};
