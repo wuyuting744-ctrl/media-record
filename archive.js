@@ -66,3 +66,43 @@
  reduce.addEventListener('change',()=>align(false));
  align(false);
 })();
+
+/* Pointer lighting uses layout coordinates so tilting cannot feed back into itself. */
+(() => {
+ const dashboard=document.getElementById('dashboardView');if(!dashboard)return;
+ const fine=matchMedia('(hover:hover) and (pointer:fine)');
+ const reduce=matchMedia('(prefers-reduced-motion:reduce)');
+ const shells=[...dashboard.querySelectorAll('#dashGrid .grid-stack-item-content')];
+ const resets=[];
+ for(const shell of shells){
+  if(!shell.querySelector('.dash-card'))continue;
+  shell.dataset.glassCard='';let frame=null;
+  const reset=()=>{
+   cancelAnimationFrame(frame);frame=null;shell.classList.remove('glass-card-hover');
+   shell.style.setProperty('--tilt-x','0deg');shell.style.setProperty('--tilt-y','0deg');shell.style.setProperty('--card-light','0');
+  };
+  resets.push(reset);
+  const follow=e=>{
+   if(!fine.matches||reduce.matches||e.pointerType==='touch'||e.buttons||shell.parentElement.matches('.ui-draggable-dragging,.ui-resizable-resizing')){reset();return;}
+   cancelAnimationFrame(frame);
+   const clientX=e.clientX,clientY=e.clientY;
+   frame=requestAnimationFrame(()=>{
+    const box=shell.parentElement.getBoundingClientRect();
+    const width=shell.offsetWidth,height=shell.offsetHeight;if(!width||!height)return;
+    const x=Math.max(0,Math.min(width,clientX-box.left-shell.offsetLeft));
+    const y=Math.max(0,Math.min(height,clientY-box.top-shell.offsetTop));
+    let rx=-(y/height*2-1)*4,ry=(x/width*2-1)*4;
+    const limit=Math.max(1,Math.hypot(rx,ry)/4);rx/=limit;ry/=limit;
+    shell.style.setProperty('--light-x',x+'px');shell.style.setProperty('--light-y',y+'px');
+    shell.style.setProperty('--tilt-x',rx.toFixed(2)+'deg');shell.style.setProperty('--tilt-y',ry.toFixed(2)+'deg');
+    shell.style.setProperty('--card-light','1');shell.classList.add('glass-card-hover');
+   });
+  };
+  shell.addEventListener('pointerenter',follow);shell.addEventListener('pointermove',follow);
+  shell.addEventListener('pointerleave',reset);shell.addEventListener('pointercancel',reset);shell.addEventListener('pointerdown',reset);
+ }
+ const resetAll=()=>resets.forEach(reset=>reset());
+ window.addEventListener('blur',resetAll);
+ fine.addEventListener('change',resetAll);reduce.addEventListener('change',resetAll);
+ new MutationObserver(()=>{if(dashboard.style.display==='none')resetAll();}).observe(dashboard,{attributes:true,attributeFilter:['style']});
+})();
