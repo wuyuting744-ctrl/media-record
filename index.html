@@ -2679,17 +2679,15 @@ function hideModal(id)  { const el=document.getElementById(id); el.classList.rem
 
 document.querySelectorAll('.modal-backdrop').forEach(bd => {
     bd.addEventListener('click', e => {
-        if (e.target!==bd) return;
-        if (bd.id==='formModal')         closeFormModal();
+        if (e.target!==bd || bd.id==='formModal' || bd.id==='detailModal') return;
         if (bd.id==='confirmModal')      closeConfirmModal();
-        if (bd.id==='detailModal')       closeDetailModal();
         if (bd.id==='ratingBucketModal') hideModal('ratingBucketModal');
         if (bd.id==='genreWorksModal')   hideModal('genreWorksModal');
         if (bd.id==='calExportModal')    hideModal('calExportModal');
         if (bd.id==='networkFullModal')  hideModal('networkFullModal');
     });
 });
-document.addEventListener('keydown', e => { if (e.key!=='Escape') return; closeFormModal(); closeConfirmModal(); closeDetailModal(); hideModal('ratingBucketModal'); hideModal('genreWorksModal'); hideModal('calExportModal'); hideModal('networkFullModal'); });
+document.addEventListener('keydown', e => { if (e.key!=='Escape') return; closeConfirmModal(); hideModal('ratingBucketModal'); hideModal('genreWorksModal'); hideModal('calExportModal'); hideModal('networkFullModal'); });
 
 /* ============================================================  TOAST  */
 /* ============================================================  ALERTS  */
