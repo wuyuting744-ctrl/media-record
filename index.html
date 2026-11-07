@@ -944,6 +944,43 @@
         .grid-stack-item:hover .grid-stack-item-content .dash-card::-webkit-scrollbar-track { background:transparent; }
         .grid-stack-item-content .dash-card-title { cursor:grab; user-select:none; }
         .grid-stack-item-content .dash-card-title:active { cursor:grabbing; }
+        /* Calendar tracks fill the module itself, independent of legend height. */
+        .dash-card[data-mid="mcal"] { container-type:inline-size; }
+        .grid-stack-item .dash-card[data-mid="mcal"] { overflow:hidden; }
+        .dash-card[data-mid="mcal"] > .dash-card-title { flex-shrink:0; flex-wrap:wrap; }
+        .dash-card[data-mid="mcal"] .mcal-nav-row {
+            display:grid; grid-template-columns:26px minmax(0,1.2fr) minmax(0,1fr) 26px;
+            gap:4px; width:260px; max-width:100%; min-width:0;
+        }
+        .dash-card[data-mid="mcal"] .mcal-sel { min-width:0; width:100%; padding:4px; font-size:clamp(12px,4cqw,14px); }
+        .dash-card[data-mid="mcal"] .mcal-body-layout {
+            flex:1; min-height:0; min-width:0;
+            grid-template-columns:minmax(0,5fr) minmax(0,2fr);
+            gap:clamp(8px,3cqw,26px);
+        }
+        .dash-card[data-mid="mcal"] .mcal-body-left { min-height:0; min-width:0; }
+        .dash-card[data-mid="mcal"] .mcal-grid {
+            min-height:0; min-width:0; container-type:size;
+            grid-template-columns:repeat(7,minmax(0,1fr));
+            gap:clamp(2px,1cqw,8px);
+        }
+        .dash-card[data-mid="mcal"] .mcal-cell {
+            min-width:0; overflow:hidden; padding:0; justify-content:center;
+        }
+        .dash-card[data-mid="mcal"] .mcal-date-num { font-size:min(16px,9cqw,9cqh); }
+        .dash-card[data-mid="mcal"] .mcal-day-header {
+            min-height:0; padding:0; align-self:center; line-height:1;
+            font-size:min(14px,9cqw,7cqh);
+        }
+        .dash-card[data-mid="mcal"] .mcal-body-right { min-width:0; min-height:0; overflow:auto; }
+        .dash-card[data-mid="mcal"] #mcalDayPanel { flex-shrink:0; max-height:35%; overflow:auto; }
+        @container (max-width:400px) {
+            .dash-card[data-mid="mcal"] .mcal-body-layout {
+                grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr) minmax(0,0.4fr);
+            }
+            .dash-card[data-mid="mcal"] .mcal-body-right .mcal-summary { flex-direction:row; }
+            .dash-card[data-mid="mcal"] .mcal-body-right .mcal-legend-row { margin-top:8px; }
+        }
         /* Resize handles: hidden by default, show on hover */
         .grid-stack-item > .ui-resizable-handle {
             opacity: 0;
@@ -2891,9 +2928,9 @@ function renderDashMonthCal() {
     }
     const gridEl = document.getElementById('dashMonthCalGrid');
     gridEl.innerHTML = html;
-    // Let week rows stretch to fill the right-panel height equally
+    // Fit all weeks inside the module's remaining height, including six-week months.
     const weekRows = Math.ceil((firstWD + dim) / 7);
-    gridEl.style.gridTemplateRows = `auto ${'1fr '.repeat(weekRows).trimEnd()}`;
+    gridEl.style.gridTemplateRows = `minmax(0,0.5fr) repeat(${weekRows},minmax(0,1fr))`;
     gridEl.onmouseover = (e) => {
         const cell = e.target.closest('[data-date]');
         if (!cell) return;
