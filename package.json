@@ -1,1 +1,1 @@
-{"name": "media-record", "private": true, "scripts": {"test": "node verify-database.cjs && node verify-incremental-database.cjs && node verify-account.cjs && node verify-cache.cjs"}, "devDependencies": {"@electric-sql/pglite": "0.3.14", "playwright": "1.58.2"}}
+{"name": "media-record", "private": true, "scripts": {"test": "node verify-database.cjs && node verify-incremental-database.cjs && node verify-account.cjs && node verify-cache.cjs && node verify-dashboard-controls.cjs"}, "devDependencies": {"@electric-sql/pglite": "0.3.14", "playwright": "1.58.2"}}

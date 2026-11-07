@@ -202,7 +202,6 @@
         .toprated-col-ph { width:100%; aspect-ratio:3/4; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:2rem; }
         .toprated-col-title { font-size:0.75rem; font-weight:600; color:var(--text); line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:center; }
         .toprated-col-score { font-size:0.88rem; font-weight:700; color:var(--primary); text-align:center; }
-        .toprated-col-stars { font-size:0.65rem; color:#e8b840; text-align:center; }
         .toprated-col-empty { font-size:0.7rem; color:var(--text-muted); font-style:italic; text-align:center; }
         /* Period toggle */
         .dash-period-btns { display:flex; gap:4px; }
@@ -1024,7 +1023,7 @@
         #dashResetLayout:hover { background:var(--primary); }
         #dashResetLayout.visible { display:flex; }
     </style>
-    <link rel="stylesheet" href="archive.css?v=20261107-glass-cards">
+    <link rel="stylesheet" href="archive.css?v=20261107-layout-controls">
 </head>
 <body>
 
@@ -1037,13 +1036,6 @@
 <!-- HEADER -->
 <header class="header">
     <div class="header-inner">
-        <div class="header-top">
-            
-            <div class="header-actions">
-                
-                <button class="btn btn-white" onclick="openAddModal()"><i class="fa-solid fa-plus"></i> 添加记录</button>
-            </div>
-        </div>
         <div class="stats-grid" id="statsGrid"></div>
     </div>
 </header>
@@ -1106,12 +1098,8 @@
     <div class="result-bar" id="resultBar">
         <div class="result-info" id="resultInfo"></div>
         <div class="result-actions">
-            <div class="action-dd-wrap" id="sortWrap">
-                <button class="action-icon-btn" id="sortBtn" onclick="toggleSortPanel()" title="排序">
-                    <i class="fa-solid fa-sort"></i>
-                </button>
-                <div class="action-panel" id="sortPanel"></div>
-            </div>
+            <button class="action-icon-btn" id="sortAscBtn" onclick="toggleRatingSort('asc')" title="评分升序" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20V4m-4 4 4-4 4 4M14 7h3M14 12h5M14 17h7"/></svg></button>
+            <button class="action-icon-btn" id="sortDescBtn" onclick="toggleRatingSort('desc')" title="评分降序" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16m-4-4 4 4 4-4M14 7h7M14 12h5M14 17h3"/></svg></button>
             <div class="action-dd-wrap" id="groupWrap">
                 <button class="action-icon-btn" id="groupBtn" onclick="toggleGroupPanel()" title="分组显示">
                     <i class="fa-solid fa-layer-group"></i>
@@ -1311,7 +1299,8 @@
 </main>
 </div><!-- app-content -->
 
-<button id="dashResetLayout" onclick="resetDashLayout()" title="重置布局">↺</button>
+<button id="dashResetLayout" onclick="resetDashLayout()" title="重置布局" hidden>↺</button>
+<button class="fab dashboard-save" id="dashSaveLayout" onclick="saveDashLayout()" title="保存看板布局" aria-label="保存看板布局到账号" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l4 4v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M7 3v6h10V3M7 21v-8h10v8M14 5v2"/></svg></button>
 <button class="fab" onclick="openAddModal()" title="添加记录"><i class="fa-solid fa-plus"></i></button>
 
 <!-- ADD / EDIT MODAL -->
@@ -1638,15 +1627,12 @@ let filterGenreValue  = '';   // selected genre for toolbar filter
 let currentImgBase64  = '';   // image being edited in current modal session
 let sortField  = '';          // '' = default (insertion order)
 let sortDir    = 'desc';      // 'asc' | 'desc'
+const collapsedGroups = new Set();
 let groupField = '';          // '' = no grouping
 let alertFilter = null;       // null = inactive, Set<id> = filter to these records
 let alertFilterType = '';     // 'backlog' | 'stalled'
 let _calRecs = null;          // filtered records for calendar view (null = use all records)
 
-const SORT_OPTS = [
-    { val:'',         label:'默认顺序' },
-    { val:'rating',   label:'评分' },
-];
 const GROUP_OPTS = [
     { val:'',         label:'不分组' },
     { val:'category', label:'按类别' },
@@ -1833,21 +1819,6 @@ function groupOrder() {
 }
 
 /* Panel render */
-function renderSortPanel() {
-    let html = `<div class="action-panel-title">排序方式</div>`;
-    SORT_OPTS.forEach(o => {
-        html += `<div class="action-opt${sortField===o.val?' selected':''}" onclick="setSortField('${o.val}')">
-            <span class="opt-chk">${sortField===o.val?'<i class="fa-solid fa-check"></i>':''}</span>${esc(o.label)}
-        </div>`;
-    });
-    html += `<div class="action-divider"></div>
-    <div class="sort-dir-row">
-        <button class="sort-dir-btn${sortDir==='asc'?' active':''}" onclick="setSortDir('asc')">↑ 升序</button>
-        <button class="sort-dir-btn${sortDir==='desc'?' active':''}" onclick="setSortDir('desc')">↓ 降序</button>
-    </div>`;
-    document.getElementById('sortPanel').innerHTML = html;
-}
-
 function renderGroupPanel() {
     let html = `<div class="action-panel-title">分组方式</div>`;
     GROUP_OPTS.forEach(o => {
@@ -1858,26 +1829,29 @@ function renderGroupPanel() {
     document.getElementById('groupPanel').innerHTML = html;
 }
 
-function toggleSortPanel() {
-    renderSortPanel();
-    document.getElementById('sortPanel').classList.toggle('open');
-    document.getElementById('groupPanel').classList.remove('open');
-}
 function toggleGroupPanel() {
     renderGroupPanel();
     document.getElementById('groupPanel').classList.toggle('open');
-    document.getElementById('sortPanel').classList.remove('open');
 }
-function setSortField(val) {
-    sortField = val;
-    document.getElementById('sortBtn').classList.toggle('active', !!val);
-    renderSortPanel();
+function toggleRatingSort(dir) {
+    sortField = sortField === 'rating' && sortDir === dir ? '' : 'rating';
+    sortDir = dir;
+    for (const direction of ['asc','desc']) {
+        const button = document.getElementById(direction === 'asc' ? 'sortAscBtn' : 'sortDescBtn');
+        const selected = sortField === 'rating' && sortDir === direction;
+        button.classList.toggle('active', selected);
+        button.setAttribute('aria-pressed', String(selected));
+    }
     applyFilters();
 }
-function setSortDir(dir) {
-    sortDir = dir;
-    renderSortPanel();
-    if (sortField) applyFilters();
+function toggleCardGroup(button) {
+    const key = button.dataset.groupKey;
+    const collapsed = !collapsedGroups.has(key);
+    if (collapsed) collapsedGroups.add(key); else collapsedGroups.delete(key);
+    button.setAttribute('aria-expanded', String(!collapsed));
+    const content = document.getElementById(button.getAttribute('aria-controls'));
+    content.hidden = collapsed;
+    if (!collapsed) applyNotesClamp(content);
 }
 function setGroupField(val) {
     groupField = val;
@@ -1971,8 +1945,7 @@ function renderCards(filtered) {
             <div class="empty-state" style="grid-column:1/-1">
                 <i class="fa-solid ${hasF?'fa-filter-circle-xmark':'fa-book-open-reader'}"></i>
                 <h3>${hasF?'没有符合条件的记录':'还没有记录哦'}</h3>
-                <p>${hasF?'试试调整或清除筛选条件':'点击「添加记录」，开始记录你的影视文学之旅！'}</p>
-                ${!hasF?'<button class="btn btn-primary" onclick="openAddModal()"><i class="fa-solid fa-plus"></i> 添加第一条</button>':''}
+                <p>${hasF?'试试调整或清除筛选条件':'点击右下方的加号，开始记录你的影视文学之旅！'}</p>
             </div>`;
         return;
     }
@@ -1998,14 +1971,15 @@ function renderCards(filtered) {
         });
         const order = groupOrder();
         const keys  = [...new Set([...order, ...Object.keys(groups)])].filter(k => groups[k]);
-        grid.innerHTML = keys.map(key => `
+        grid.innerHTML = keys.map((key,index) => `
             <div class="group-section">
-                <div class="group-header">
+                <button type="button" class="group-header group-toggle" data-group-key="${esc(groupField+':'+key)}" aria-expanded="${!collapsedGroups.has(groupField+':'+key)}" aria-controls="group-body-${index}" onclick="toggleCardGroup(this)">
+                    <svg class="group-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                     <span class="group-label">${esc(key)}</span>
                     <span class="group-count">${groups[key].length} 条</span>
                     <span class="group-line"></span>
-                </div>
-                <div class="cards-grid">${groups[key].map(cardHTML).join('')}</div>
+                </button>
+                <div class="cards-grid" id="group-body-${index}" ${collapsedGroups.has(groupField+':'+key)?'hidden':''}>${groups[key].map(cardHTML).join('')}</div>
             </div>`).join('');
     } else {
         // Normal flat grid
@@ -2018,6 +1992,8 @@ function renderCards(filtered) {
 /* ============================================================  CALENDAR  */
 function switchView(view) {
     currentView = view;
+    document.getElementById('dashSaveLayout').hidden = view !== 'dashboard';
+    document.getElementById('dashResetLayout').hidden = view !== 'dashboard';
     const viewMap = { grid:'gridView', calendar:'calendarView', dashboard:'dashboardView' };
     Object.entries(viewMap).forEach(([v, id]) => {
         const el = document.getElementById(id);
@@ -2375,7 +2351,6 @@ function refreshDropdown() {
 document.addEventListener('click', e => {
     const sel = document.getElementById('genreSelector');
     if (sel && !sel.contains(e.target)) { document.getElementById('genreDropdown').classList.add('hidden'); document.getElementById('genreInputBox').classList.remove('focused'); }
-    if (!document.getElementById('sortWrap')?.contains(e.target))  document.getElementById('sortPanel')?.classList.remove('open');
     if (!document.getElementById('groupWrap')?.contains(e.target)) document.getElementById('groupPanel')?.classList.remove('open');
 });
 
@@ -4153,7 +4128,6 @@ function renderDashTopRated() {
                 ${tag}${poster}
                 <div class="toprated-col-title" title="${esc(best.title)}">${esc(best.title)}</div>
                 <div class="toprated-col-score">${best.rating} 分</div>
-                <div class="toprated-col-stars">${starsHTML(best.rating)}</div>
             </div>`;
         }
     });
@@ -4269,6 +4243,8 @@ const DASH_LAYOUT_KEY = 'dashGridLayout_v2';
 
 function initDashGrid() {
     if (typeof GridStack === 'undefined' || window._gsError || dashGrid) return;
+    // Saved account layouts identify modules by their DOM IDs.
+    document.querySelectorAll('#dashGrid .grid-stack-item').forEach(el => el.setAttribute('gs-id', el.id));
 
     dashGrid = GridStack.init({
         column: 12,
@@ -4302,28 +4278,21 @@ function initDashGrid() {
         document.querySelectorAll('#dashGrid .grid-stack-item-content').forEach(el => _ro.observe(el));
     }
 
-    // Save layout on any change
+    // Layout changes stay local until the circular Save button is pressed.
     dashGrid.on('change', () => {
-        try {
-            const items = dashGrid.engine.nodes.map(n => ({
-                id: n.el?.id || '', x:n.x, y:n.y, w:n.w, h:n.h
-            })).filter(n => n.id);
-            MediaAccount.saveLayout(items);
-            document.getElementById('dashResetLayout')?.classList.add('visible');
-        } catch {}
+        markDashLayoutDirty();
+        document.getElementById('dashResetLayout')?.classList.add('visible');
     });
 
     // Restore saved layout
     try {
         const saved = MediaAccount.layout();
         if (saved?.length) {
-            saved.forEach(item => {
-                const el = document.getElementById(item.id);
-                if (el) dashGrid.update(el, {x:item.x, y:item.y, w:item.w, h:item.h});
-            });
+            dashGrid.load(saved.map(item=>({...item})));
             document.getElementById('dashResetLayout')?.classList.add('visible');
         }
     } catch {}
+    resetDashLayoutBaseline();
 }
 
 function rerenderDashModule(mid) {
@@ -4340,17 +4309,43 @@ function rerenderDashModule(mid) {
     }
 }
 
-function resetDashLayout() {
-    MediaAccount.saveLayout([]);
-    document.getElementById('dashResetLayout')?.classList.remove('visible');
-    // Reload page to restore default positions
-    MediaAccount.resetLayout();
+let dashLayoutBaseline = '';
+function currentDashLayout() {
+    return (dashGrid?.engine.nodes || []).map(n => ({id:n.el?.id || '',x:n.x,y:n.y,w:n.w,h:n.h})).filter(n=>n.id);
+}
+function layoutSignature(items) {
+    return JSON.stringify([...items].sort((a,b)=>a.id.localeCompare(b.id)));
+}
+function resetDashLayoutBaseline() {
+    dashLayoutBaseline = layoutSignature(currentDashLayout());
+    markDashLayoutDirty();
+}
+function markDashLayoutDirty() {
+    const button = document.getElementById('dashSaveLayout');
+    button.classList.toggle('layout-dirty', layoutSignature(currentDashLayout()) !== dashLayoutBaseline);
+}
+async function saveDashLayout() {
+    const button = document.getElementById('dashSaveLayout');
+    try {
+        MediaAccount.guard();
+        const items = currentDashLayout();
+        button.disabled = true;
+        await MediaAccount.saveLayout(items);
+        dashLayoutBaseline = layoutSignature(items);
+        markDashLayoutDirty();
+        showToast('看板布局已保存到账号', 'success');
+    } catch (error) { showToast(error.message || '布局保存失败，请重试', 'error'); }
+    finally { button.disabled = false; }
+}
+async function resetDashLayout() {
+    try { await MediaAccount.resetLayout(); markDashLayoutDirty(); showToast('已重置布局，点击保存按钮同步到账号'); }
+    catch(error) { showToast(error.message, 'error'); }
 }
 
 /* ============================================================  START  */
 // Account bootstrap initializes the page.
 </script>
 <script src="archive.js?v=20261107-glass-cards"></script>
-<script src="account.js?v=20261107-account-cache"></script>
+<script src="account.js?v=20261107-manual-layout"></script>
 </body>
 </html>

@@ -120,7 +120,7 @@ window.MediaAccount = (() => {
    const urls=await loadCoverURLs(row);if(token!==epoch)return;
    coverURLs=urls;restore(row);revision=row.revision;lastGood=snapshot();render();
    status('已同步 · '+user.email);document.getElementById('importLocal').hidden=!localStorage.getItem(STORAGE_KEY);
-   if(dashGrid)dashGrid.load(savedLayout.length?savedLayout:defaultLayout);
+   if(dashGrid){dashGrid.load(clone(savedLayout.length?savedLayout:defaultLayout));resetDashLayoutBaseline();}
    ready=true;void writeCache(lastGood);
   }catch(e){if(token!==epoch)return;status('同步失败 · '+errorText(e));showToast(errorText(e),'error');}
  }
@@ -165,7 +165,7 @@ window.MediaAccount = (() => {
  document.getElementById('accountStrip').insertAdjacentHTML('beforeend','<label class="btn btn-secondary" style="font-size:11px;cursor:pointer">导入备份文件<input id="backupFile" type="file" accept=".json,application/json" hidden></label>');document.getElementById('backupFile').addEventListener('change',e=>{const file=e.target.files[0];if(file)importFile(file);e.target.value='';});
  async function importLocal(){try{guard();if(!confirm('将本机旧记录、封面与标签导入当前账号？现有账号记录会保留。'))return;const cloudImages={...imgCache};await loadImagesFromIDB();const old=loadRecords();imgCache={...imgCache,...cloudImages};const ids=new Set(records.map(r=>r.id));records.push(...old.filter(r=>!ids.has(r.id)));customGenres=[...new Set([...customGenres,...JSON.parse(localStorage.getItem(CUSTOM_GENRES_KEY)||'[]')])];customCompanions=[...new Set([...customCompanions,...JSON.parse(localStorage.getItem(CUSTOM_COMPANIONS_KEY)||'[]')])];await persist();render();showToast('本机记录已导入账号');}catch(e){showToast(errorText(e),'error');}}
  client.auth.onAuthStateChange((event,session)=>setTimeout(()=>{if(event==='PASSWORD_RECOVERY'){user=session.user;setMode('password');showModal('accountModal');}else if((event==='SIGNED_OUT'&&user!==null)||(event==='SIGNED_IN'&&session?.user.id!==user?.id)){const oldId=user?.id;if(event==='SIGNED_OUT'){void deleteCache(oldId);ready=false;user=null;restore({});render();}epoch++;refreshFlight=null;refresh();}},0));
- return {open,mode:setMode,refresh,logout,importLocal,guard,persist,layout:()=>savedLayout,saveLayout:async items=>{if(!ready||busy)return; savedLayout=items;try{await persist();}catch(e){showToast(errorText(e),'error');}},resetLayout:async()=>{while(busy)await new Promise(r=>setTimeout(r,50));if(dashGrid){ready=false;dashGrid.load(defaultLayout);ready=true;}} ,start:async()=>{await init();await refresh();}};
+ return {open,mode:setMode,refresh,logout,importLocal,guard,persist,layout:()=>savedLayout,saveLayout:async items=>{guard();savedLayout=clone(items);await persist();},resetLayout:async()=>{guard();if(dashGrid)dashGrid.load(clone(defaultLayout));} ,start:async()=>{await init();await refresh();}};
 })();
 // Keep every original interaction; commit data before closing its form or showing success.
 saveImageToIDB=(id,image)=>{imgCache[id]=image;};
