@@ -1023,7 +1023,7 @@
         #dashResetLayout:hover { background:var(--primary); }
         #dashResetLayout.visible { display:flex; }
     </style>
-    <link rel="stylesheet" href="archive.css?v=20261107-layout-controls">
+    <link rel="stylesheet" href="archive.css?v=20261108-monthly-card-size">
 </head>
 <body>
 
@@ -4150,7 +4150,7 @@ function renderDashDetailCards() {
     el.innerHTML = recs.map(r => {
         const poster = imgCache[r.id] ? `<img crossorigin="anonymous" src="${imgCache[r.id]}" class="detail-pcard-img" alt="封面">`
             : `<div class="detail-pcard-ph" style="background:${CAT_BG[r.category]||'#f0ece8'}">${DASH_ICON[r.category]||'🎭'}</div>`;
-        const rating = r.rating > 0 ? `<div class="detail-pcard-score">${r.rating} 分</div>` : '';
+        const rating = `<div class="detail-pcard-score">${r.rating > 0 ? r.rating+' 分' : ''}</div>`;
         return `<div class="detail-pcard" onclick="openDetailModal('${r.id}')">
             ${poster}
             <div class="detail-pcard-body">

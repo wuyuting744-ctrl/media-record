@@ -224,3 +224,9 @@ body{--nav-width:260px}
 .group-toggle[aria-expanded="false"] .group-chevron{transform:rotate(-90deg)}
 .cards-grid[hidden]{display:none!important}
 @media(max-width:600px){.dashboard-save.fab{bottom:94px}#dashResetLayout{bottom:168px;right:28px}}
+.dash-detail-grid{grid-template-columns:repeat(10,minmax(0,1fr));grid-auto-rows:1fr}
+.detail-pcard{display:flex;flex-direction:column;min-width:0}
+.detail-pcard-img,.detail-pcard-ph{flex-shrink:0}
+.detail-pcard-body{flex:1;min-width:0}
+.detail-pcard-cat{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.detail-pcard-score{min-height:1.35em;line-height:1.35}
