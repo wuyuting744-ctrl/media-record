@@ -120,7 +120,7 @@ window.MediaAccount = (() => {
    const urls=await loadCoverURLs(row);if(token!==epoch)return;
    coverURLs=urls;restore(row);revision=row.revision;lastGood=snapshot();render();
    status('已同步 · '+user.email);document.getElementById('importLocal').hidden=!localStorage.getItem(STORAGE_KEY);
-   if(dashGrid){dashGrid.load(clone(savedLayout.length?savedLayout:defaultLayout));resetDashLayoutBaseline();}
+   if(dashGrid){dashGrid.load(filterDashLayout(clone(savedLayout.length?savedLayout:defaultLayout)));resetDashLayoutBaseline();}
    ready=true;void writeCache(lastGood);
   }catch(e){if(token!==epoch)return;status('同步失败 · '+errorText(e));showToast(errorText(e),'error');}
  }

@@ -222,7 +222,6 @@
         .detail-pcard-score  { font-size:0.54rem; color:var(--text-muted); font-weight:600; margin-top:1px; }
         .dash-detail-empty { color:var(--text-muted); font-size:0.85rem; padding:16px 0; }
         /* Rating chart canvas area */
-        .rating-canvas-wrap { margin-top:4px; }
         @media (max-width:800px) { .dash-row2 { grid-template-columns:1fr; } }
         /* Analytics duo row (题材偏好 + 关系图谱, same height) */
         .dash-analytics-duo { display:grid; grid-template-columns:2fr 3fr; gap:16px; }
@@ -448,7 +447,6 @@
         .img-preview-info { flex:1; }
         .img-preview-label { font-size:0.72rem; color:var(--text-muted); margin-bottom:8px; display:block; }
         /* Rating bucket popup */
-        #chartRating { cursor:pointer; }
         .rbucket-cat-group { margin-bottom:12px; }
         .rbucket-cat-group:last-child { margin-bottom:0; }
         .rbucket-works { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
@@ -1023,7 +1021,7 @@
         #dashResetLayout:hover { background:var(--primary); }
         #dashResetLayout.visible { display:flex; }
     </style>
-    <link rel="stylesheet" href="archive.css?v=20261108-monthly-card-size">
+    <link rel="stylesheet" href="archive.css?v=20261110-flat-dashboard">
 </head>
 <body>
 
@@ -1179,16 +1177,6 @@
         <div class="grid-stack-item" id="gsi-toprated" gs-w="7" gs-h="14" gs-min-h="6" gs-min-w="3">
             <div class="grid-stack-item-content">
                 <div class="dash-card" id="dashTopRated" data-mid="toprated"></div>
-            </div>
-        </div>
-
-        <!-- 评分分布 -->
-        <div class="grid-stack-item" id="gsi-rating" gs-w="12" gs-h="10" gs-min-h="5" gs-min-w="4">
-            <div class="grid-stack-item-content">
-                <div class="dash-card" data-mid="rating">
-                    <div class="dash-card-title">评分分布</div>
-                    <div class="rating-canvas-wrap"><canvas id="chartRating"></canvas></div>
-                </div>
             </div>
         </div>
 
@@ -1448,20 +1436,6 @@
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="closeDetailModal()">关闭</button>
             <button class="btn btn-primary" id="detailEditBtn"><i class="fa-solid fa-pen-to-square"></i> 编辑</button>
-        </div>
-    </div>
-</div>
-
-<!-- Rating bucket detail modal -->
-<div class="modal-backdrop" id="ratingBucketModal">
-    <div class="modal" style="max-width:480px">
-        <div class="modal-header">
-            <div class="modal-title" id="ratingBucketTitle">评分段作品</div>
-            <button class="modal-close" onclick="hideModal('ratingBucketModal')"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div id="ratingBucketBody" style="max-height:60vh;overflow-y:auto"></div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="hideModal('ratingBucketModal')">关闭</button>
         </div>
     </div>
 </div>
@@ -2698,13 +2672,12 @@ document.querySelectorAll('.modal-backdrop').forEach(bd => {
     bd.addEventListener('click', e => {
         if (e.target!==bd || bd.id==='formModal' || bd.id==='detailModal') return;
         if (bd.id==='confirmModal')      closeConfirmModal();
-        if (bd.id==='ratingBucketModal') hideModal('ratingBucketModal');
         if (bd.id==='genreWorksModal')   hideModal('genreWorksModal');
         if (bd.id==='calExportModal')    hideModal('calExportModal');
         if (bd.id==='networkFullModal')  hideModal('networkFullModal');
     });
 });
-document.addEventListener('keydown', e => { if (e.key!=='Escape') return; closeConfirmModal(); hideModal('ratingBucketModal'); hideModal('genreWorksModal'); hideModal('calExportModal'); hideModal('networkFullModal'); });
+document.addEventListener('keydown', e => { if (e.key!=='Escape') return; closeConfirmModal(); hideModal('genreWorksModal'); hideModal('calExportModal'); hideModal('networkFullModal'); });
 
 /* ============================================================  TOAST  */
 /* ============================================================  ALERTS  */
@@ -4044,7 +4017,6 @@ function renderDashboard() {
     renderDashStatusMatrix();
     renderDashTopRated();
     renderDashDetailCards();
-    renderDashRatingChart();
     renderDashMonthCal();
     renderDashTrendChart();
     renderDashGenreRadar();
@@ -4168,69 +4140,6 @@ function onDashDetailChange() {
     renderDashDetailCards();
 }
 
-/* 5. Rating distribution bar chart */
-function renderDashRatingChart() {
-    const buckets=[
-        {label:'0–2', min:0.01,max:2,    color:'rgba(216,180,148,0.30)'},   /* 极浅蜜桃 */
-        {label:'2–4', min:2,   max:4,    color:'rgba(216,180,148,0.58)'},   /* 浅蜜桃   */
-        {label:'4–6', min:4,   max:6,    color:'rgba(212,168,168,0.55)'},   /* 浅玫瑰   */
-        {label:'6–8', min:6,   max:8,    color:'rgba(212,168,168,0.78)'},   /* 玫瑰     */
-        {label:'8–10',min:8,   max:10.1, color:'rgba(196,136,136,0.95)'},   /* 深玫瑰   */
-        {label:'未评分',color:'rgba(216,180,148,0.18)'},                    /* 极浅蜜桃 */
-    ];
-    buckets.forEach((b,i)=>{
-        b.count = b.label==='未评分' ? records.filter(r=>!r.rating||r.rating===0).length
-                                     : records.filter(r=>r.rating>0&&r.rating>=b.min&&r.rating<b.max).length;
-    });
-    const c=initCanvas('chartRating',160); if(!c) return;
-    const {ctx,W,H}=c, pL=44,pR=12,pT=26,pB=36, cW=W-pL-pR, cH=H-pT-pB;
-    const max=Math.max(...buckets.map(b=>b.count),1), n=buckets.length, slotW=cW/n, barW=slotW*0.65;
-    ctx.strokeStyle='#e8ddd4'; ctx.lineWidth=0.5;
-    for(let i=0;i<=4;i++){const y=pT+cH*(1-i/4);ctx.beginPath();ctx.moveTo(pL,y);ctx.lineTo(W-pR,y);ctx.stroke();if(i){ctx.fillStyle='#a09080';ctx.font='16px sans-serif';ctx.textAlign='right';ctx.fillText(Math.round(max*i/4),pL-3,y+3);}}
-    buckets.forEach((b,i)=>{
-        const x=pL+slotW*i+(slotW-barW)/2, bH=max>0?(b.count/max)*cH:0, y=pT+cH-bH;
-        ctx.fillStyle=b.color; roundRectFill(ctx,x,y,barW,bH,3);
-        if(b.count){ctx.fillStyle=b.count&&b.count>0?'#2c2010':'#9a8068';ctx.font='bold 16px -apple-system,sans-serif';ctx.textAlign='center';ctx.fillText(b.count,x+barW/2,y-4);}
-        ctx.fillStyle='#9a8068';ctx.font='16px -apple-system,sans-serif';ctx.textAlign='center';ctx.fillText(b.label,x+barW/2,H-pB+14);
-    });
-    // Click handler: detect which bucket slot was clicked
-    const canvas = document.getElementById('chartRating');
-    canvas.onclick = function(e) {
-        const cx = e.offsetX;
-        for (let i = 0; i < buckets.length; i++) {
-            const sx = pL + slotW * i;
-            if (cx >= sx && cx < sx + slotW) { showRatingBucketModal(buckets[i]); return; }
-        }
-    };
-}
-
-function showRatingBucketModal(bucket) {
-    if (!bucket.count) { showToast('该评分段暂无作品'); return; }
-    const works = bucket.label === '未评分'
-        ? records.filter(r => !r.rating || r.rating === 0)
-        : records.filter(r => r.rating > 0 && r.rating >= bucket.min && r.rating < bucket.max);
-    if (!works.length) return;
-    const grouped = {};
-    works.forEach(r => { if (!grouped[r.category]) grouped[r.category] = []; grouped[r.category].push(r); });
-    document.getElementById('ratingBucketTitle').textContent = `评分 ${bucket.label} · 共 ${works.length} 部`;
-    let html = '';
-    CATEGORIES.forEach(cat => {
-        if (!grouped[cat]) return;
-        html += `<div class="rbucket-cat-group">
-            <span class="tag tag-${CAT_CLASS[cat]||'movie'}" style="font-size:0.65rem;padding:2px 8px">${esc(cat)}</span>
-            <div class="rbucket-works">
-                ${grouped[cat].map(r =>
-                    `<span class="rbucket-work-chip" onclick="hideModal('ratingBucketModal');openDetailModal('${r.id}')">
-                        ${esc(r.title)}${r.rating>0?`<span class="rbucket-work-score">${r.rating}</span>`:''}
-                    </span>`
-                ).join('')}
-            </div>
-        </div>`;
-    });
-    document.getElementById('ratingBucketBody').innerHTML = html || '<div style="color:var(--text-muted);font-size:0.85rem">暂无作品</div>';
-    showModal('ratingBucketModal');
-}
-
 let _toastTimer;
 function showToast(msg,type='') {
     const t=document.getElementById('toast'); t.textContent=msg; t.className='toast '+type; t.classList.add('show');
@@ -4240,6 +4149,9 @@ function showToast(msg,type='') {
 /* ============================================================  DASHBOARD GRID  */
 let dashGrid = null;
 const DASH_LAYOUT_KEY = 'dashGridLayout_v2';
+function filterDashLayout(items) {
+    return items.filter(item => item.id !== 'gsi-rating').map(item => ({...item}));
+}
 
 function initDashGrid() {
     if (typeof GridStack === 'undefined' || window._gsError || dashGrid) return;
@@ -4288,7 +4200,7 @@ function initDashGrid() {
     try {
         const saved = MediaAccount.layout();
         if (saved?.length) {
-            dashGrid.load(saved.map(item=>({...item})));
+            dashGrid.load(filterDashLayout(saved));
             document.getElementById('dashResetLayout')?.classList.add('visible');
         }
     } catch {}
@@ -4301,7 +4213,6 @@ function rerenderDashModule(mid) {
         case 'monthly':  renderDashMonthCats(); renderDashDetailCards(); break;
         case 'status':   renderDashStatusMatrix(); break;
         case 'toprated': renderDashTopRated(); break;
-        case 'rating':   renderDashRatingChart(); break;
         case 'mcal':     renderDashMonthCal(); break;
         case 'trend':    renderDashTrendChart(); break;
         case 'radar':    radarCache = null; renderDashGenreRadar(); break;
@@ -4345,7 +4256,7 @@ async function resetDashLayout() {
 /* ============================================================  START  */
 // Account bootstrap initializes the page.
 </script>
-<script src="archive.js?v=20261108-tilt-2deg"></script>
-<script src="account.js?v=20261107-manual-layout"></script>
+<script src="archive.js?v=20261110-flat-dashboard"></script>
+<script src="account.js?v=20261110-layout-filter"></script>
 </body>
 </html>

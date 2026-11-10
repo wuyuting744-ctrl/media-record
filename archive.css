@@ -185,7 +185,7 @@ body{--nav-width:260px}
 .side-nav .header-actions .view-btn{gap:12px}
 .nav-line-icon{display:block;width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 @media(max-width:700px){.side-nav .view-toggle{gap:4px}.side-nav .header-actions .view-btn{gap:6px;padding:8px 6px!important}.nav-line-icon{width:18px;height:18px}}
-/* Frosted dashboard surfaces: only the inner shell tilts, never GridStack nodes. */
+/* Frosted dashboard surfaces with cursor lighting. */
 @property --card-light{syntax:'<number>';inherits:true;initial-value:0}
 #dashboardView{background:radial-gradient(ellipse at 18% 18%,rgba(188,211,192,.18),transparent 55%),radial-gradient(ellipse at 85% 55%,rgba(232,219,194,.18),transparent 60%)}
 #dashGrid .dash-card{
@@ -195,11 +195,9 @@ body{--nav-width:260px}
  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 6px 28px rgba(44,68,48,.05)!important;
 }
 #dashGrid .grid-stack-item-content[data-glass-card]{
- border-radius:18px;--tilt-x:0deg;--tilt-y:0deg;
- transform:perspective(1100px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
- transform-origin:center;transition:transform .45s cubic-bezier(.2,.7,.25,1),--card-light .3s ease;
+ border-radius:18px;transition:--card-light .3s ease;
 }
-#dashGrid .grid-stack-item-content.glass-card-hover{transition:transform .12s ease-out,--card-light .22s ease;will-change:transform}
+#dashGrid .grid-stack-item-content.glass-card-hover{transition:--card-light .22s ease}
 #dashGrid .grid-stack-item-content[data-glass-card]::after{
  content:'';position:absolute;inset:0;padding:1px;border-radius:inherit;pointer-events:none;z-index:4;
  background:radial-gradient(circle 200px at var(--light-x,50%) var(--light-y,50%),rgba(255,255,255,.98),rgba(202,228,207,.7) 32%,transparent 72%);
@@ -208,7 +206,7 @@ body{--nav-width:260px}
 }
 #dashGrid .grid-stack-item > .ui-resizable-handle{background:transparent!important}
 #dashGrid .grid-stack-item > .ui-resizable-se::after{content:'';position:absolute;right:4px;bottom:4px;width:7px;height:7px;border-right:1.5px solid rgba(60,96,70,.3);border-bottom:1.5px solid rgba(60,96,70,.3);border-radius:1px;pointer-events:none}
-@media(prefers-reduced-motion:reduce){#dashGrid .grid-stack-item-content[data-glass-card]{transform:none;transition:none;will-change:auto}}
+@media(prefers-reduced-motion:reduce){#dashGrid .grid-stack-item-content[data-glass-card]{transition:none}}
 .dashboard-save.fab{bottom:102px;font-size:20px}
 .dashboard-save svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .dashboard-save.fab:hover{transform:translateY(-2px)!important}

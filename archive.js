@@ -67,7 +67,7 @@
  align(false);
 })();
 
-/* Pointer lighting uses layout coordinates so tilting cannot feed back into itself. */
+/* Pointer lighting follows the cursor without transforming dashboard cards. */
 (() => {
  const dashboard=document.getElementById('dashboardView');if(!dashboard)return;
  const fine=matchMedia('(hover:hover) and (pointer:fine)');
@@ -79,7 +79,7 @@
   shell.dataset.glassCard='';let frame=null;
   const reset=()=>{
    cancelAnimationFrame(frame);frame=null;shell.classList.remove('glass-card-hover');
-   shell.style.setProperty('--tilt-x','0deg');shell.style.setProperty('--tilt-y','0deg');shell.style.setProperty('--card-light','0');
+   shell.style.setProperty('--card-light','0');
   };
   resets.push(reset);
   const follow=e=>{
@@ -91,10 +91,7 @@
     const width=shell.offsetWidth,height=shell.offsetHeight;if(!width||!height)return;
     const x=Math.max(0,Math.min(width,clientX-box.left-shell.offsetLeft));
     const y=Math.max(0,Math.min(height,clientY-box.top-shell.offsetTop));
-    let rx=-(y/height*2-1)*2,ry=(x/width*2-1)*2;
-    const limit=Math.max(1,Math.hypot(rx,ry)/2);rx/=limit;ry/=limit;
     shell.style.setProperty('--light-x',x+'px');shell.style.setProperty('--light-y',y+'px');
-    shell.style.setProperty('--tilt-x',rx.toFixed(2)+'deg');shell.style.setProperty('--tilt-y',ry.toFixed(2)+'deg');
     shell.style.setProperty('--card-light','1');shell.classList.add('glass-card-hover');
    });
   };
