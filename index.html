@@ -1021,7 +1021,7 @@
         #dashResetLayout:hover { background:var(--primary); }
         #dashResetLayout.visible { display:flex; }
     </style>
-    <link rel="stylesheet" href="archive.css?v=20261110-calendar-title">
+    <link rel="stylesheet" href="archive.css?v=20261110-back-to-top">
 </head>
 <body>
 
@@ -1289,6 +1289,7 @@
 </div><!-- app-content -->
 
 <button id="dashResetLayout" onclick="resetDashLayout()" title="重置布局" hidden>↺</button>
+<button class="fab back-to-top" id="albumBackToTop" onclick="scrollAlbumToTop()" title="回到顶部" aria-label="滑动至页面最上方"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V5m-7 7 7-7 7 7M5 3h14"/></svg></button>
 <button class="fab dashboard-save" id="dashSaveLayout" onclick="saveDashLayout()" title="保存看板布局" aria-label="保存看板布局到账号" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l4 4v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M7 3v6h10V3M7 21v-8h10v8M14 5v2"/></svg></button>
 <button class="fab" onclick="openAddModal()" title="添加记录"><i class="fa-solid fa-plus"></i></button>
 
@@ -1965,7 +1966,12 @@ function renderCards(filtered) {
 }
 
 /* ============================================================  CALENDAR  */
+function scrollAlbumToTop() {
+    window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'});
+}
+
 function switchView(view) {
+    document.getElementById('albumBackToTop').hidden = view !== 'grid';
     currentView = view;
     document.getElementById('dashSaveLayout').hidden = view !== 'dashboard';
     document.getElementById('dashResetLayout').hidden = view !== 'dashboard';
