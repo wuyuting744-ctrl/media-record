@@ -1021,7 +1021,7 @@
         #dashResetLayout:hover { background:var(--primary); }
         #dashResetLayout.visible { display:flex; }
     </style>
-    <link rel="stylesheet" href="archive.css?v=20261110-flat-dashboard">
+    <link rel="stylesheet" href="archive.css?v=20261110-compact-toolbar">
 </head>
 <body>
 
@@ -1074,6 +1074,16 @@
                 <button class="btn btn-secondary" id="calExportBtn" onclick="exportCalendarToImage()" style="display:none;font-size:0.63rem;padding:6px 12px">📷 导出图片</button>
             </div>
         </div>
+        <div class="result-actions" id="albumActions">
+            <button class="action-icon-btn" id="sortAscBtn" onclick="toggleRatingSort('asc')" title="评分升序" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20V4m-4 4 4-4 4 4M14 7h3M14 12h5M14 17h7"/></svg></button>
+            <button class="action-icon-btn" id="sortDescBtn" onclick="toggleRatingSort('desc')" title="评分降序" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16m-4-4 4 4 4-4M14 7h7M14 12h5M14 17h3"/></svg></button>
+            <div class="action-dd-wrap" id="groupWrap">
+                <button class="action-icon-btn" id="groupBtn" onclick="toggleGroupPanel()" title="分组显示">
+                    <i class="fa-solid fa-layer-group"></i>
+                </button>
+                <div class="action-panel" id="groupPanel"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Alert filter active banner -->
@@ -1095,16 +1105,7 @@
 
     <div class="result-bar" id="resultBar">
         <div class="result-info" id="resultInfo"></div>
-        <div class="result-actions">
-            <button class="action-icon-btn" id="sortAscBtn" onclick="toggleRatingSort('asc')" title="评分升序" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20V4m-4 4 4-4 4 4M14 7h3M14 12h5M14 17h7"/></svg></button>
-            <button class="action-icon-btn" id="sortDescBtn" onclick="toggleRatingSort('desc')" title="评分降序" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16m-4-4 4 4 4-4M14 7h7M14 12h5M14 17h3"/></svg></button>
-            <div class="action-dd-wrap" id="groupWrap">
-                <button class="action-icon-btn" id="groupBtn" onclick="toggleGroupPanel()" title="分组显示">
-                    <i class="fa-solid fa-layer-group"></i>
-                </button>
-                <div class="action-panel" id="groupPanel"></div>
-            </div>
-        </div>
+
     </div>
 
     <!-- Grid -->
@@ -1993,6 +1994,8 @@ function switchView(view) {
     if (tb) tb.style.display = showFilter ? '' : 'none';
     const rb = document.getElementById('resultBar');
     if (rb) rb.style.display = isGrid ? '' : 'none';
+    const albumActions = document.getElementById('albumActions');
+    if (albumActions) albumActions.style.display = isGrid ? '' : 'none';
     const ab = document.getElementById('alertFilterBanner');
     if (ab && !isGrid) ab.style.display = 'none';
     // 管理按钮仅画册视图可用

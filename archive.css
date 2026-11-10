@@ -155,7 +155,7 @@ body{--nav-width:260px}
 .side-account .account-strip>div{display:flex;flex-wrap:wrap;gap:8px}
 .side-account .account-strip .btn{font-size:12px;white-space:normal;min-height:32px}
 .toolbar{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;border-radius:0!important}
-.toolbar .search-wrap input,.toolbar select,.toolbar input[type=date],.toolbar .ss-input,.toolbar .btn{height:54px!important;min-height:54px!important;line-height:normal!important}
+.toolbar .search-wrap input,.toolbar select,.toolbar input[type=date],.toolbar .ss-input,.toolbar .btn{height:48px!important;min-height:48px!important;line-height:normal!important}
 .toolbar .search-wrap input,.toolbar select,.toolbar input[type=date],.toolbar .ss-input{padding-top:0!important;padding-bottom:0!important}
 .toolbar .btn{display:inline-flex;align-items:center;font-size:14px!important}
 .tag-novel{background:#dceaff!important;color:#285e9b!important}
@@ -228,3 +228,16 @@ body{--nav-width:260px}
 .detail-pcard-body{flex:1;min-width:0}
 .detail-pcard-cat{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .detail-pcard-score{min-height:1.35em;line-height:1.35}
+
+/* Compact filters and square album actions share the toolbar row. */
+.toolbar{gap:8px}
+.toolbar .search-wrap{flex:0 1 180px;min-width:140px;width:180px}
+.toolbar .filter-group{display:contents}
+.toolbar select{width:86px;min-width:0;padding-left:8px;padding-right:4px}
+.toolbar .ss-wrap{width:100px;min-width:100px}
+.toolbar input[type=date]{width:136px;min-width:0}
+.toolbar .btn{padding-left:10px;padding-right:10px;white-space:nowrap}
+.toolbar .result-actions{margin-left:auto;gap:6px}
+.toolbar .action-icon-btn{width:48px;height:48px;min-height:48px;flex-shrink:0;border-radius:0!important}
+@media(max-width:1200px){.toolbar .search-wrap{flex:1 1 180px}.toolbar .result-actions{margin-left:auto}}
+@media(max-width:600px){.toolbar select{flex:0 0 86px}.toolbar input[type=date]{flex:0 0 136px}.toolbar .search-wrap{min-width:100%;width:100%}.toolbar .ss-wrap{flex:0 0 100px}.toolbar .result-actions{margin-left:auto}}
