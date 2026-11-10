@@ -251,3 +251,13 @@ body{--nav-width:260px}
 .back-to-top.fab:hover{transform:translateY(-2px)!important}
 .back-to-top[hidden]{display:none!important}
 @media(max-width:600px){.back-to-top.fab{bottom:94px}}
+
+/* Equal gaps across all controls, preserving the toolbar endpoints. */
+.toolbar{justify-content:space-between;column-gap:8px}
+.toolbar .result-actions{display:contents;margin-left:0}
+.toolbar .search-wrap{flex:0 1 180px}
+.toolbar .action-icon-btn{border-radius:9px!important;background:#fffefa!important;border-color:var(--border)!important;color:var(--text);box-shadow:none}
+.toolbar .action-icon-btn:hover,.toolbar select:hover,.toolbar .ss-input:hover{border-color:var(--primary-light)!important;background:#fffefa!important;color:var(--text)}
+.toolbar .action-icon-btn.active,.toolbar .filter-selected{background:#e6efe3!important;border-color:var(--primary)!important;color:var(--primary)!important;box-shadow:0 0 0 1px var(--primary)}
+.toolbar .action-icon-btn:focus-visible,.toolbar select:focus-visible,.toolbar .ss-input:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+@media(max-width:600px){.toolbar .search-wrap{flex:1 0 100%}}

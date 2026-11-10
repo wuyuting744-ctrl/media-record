@@ -1021,7 +1021,7 @@
         #dashResetLayout:hover { background:var(--primary); }
         #dashResetLayout.visible { display:flex; }
     </style>
-    <link rel="stylesheet" href="archive.css?v=20261110-network-interaction">
+    <link rel="stylesheet" href="archive.css?v=20261110-even-toolbar">
 </head>
 <body>
 
@@ -1696,6 +1696,8 @@ function renderStats() {
 
 /* ============================================================  FILTERS  */
 function applyFilters() {
+    ['filterCat','filterStatus','filterCompanion','filterDate'].forEach(id=>{const el=document.getElementById(id);el.classList.toggle('filter-selected',!!el.value);});
+    document.getElementById('filterGenreInput').classList.toggle('filter-selected',!!filterGenreValue);
     const q         = document.getElementById('searchInput').value.trim().toLowerCase();
     const cat       = document.getElementById('filterCat').value;
     const status    = document.getElementById('filterStatus').value;
@@ -1832,6 +1834,7 @@ function toggleCardGroup(button) {
 function setGroupField(val) {
     groupField = val;
     document.getElementById('groupBtn').classList.toggle('active', !!val);
+    document.getElementById('groupBtn').setAttribute('aria-pressed',String(!!val));
     renderGroupPanel();
     applyFilters();
 }
