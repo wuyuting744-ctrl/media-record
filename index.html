@@ -1021,7 +1021,7 @@
         #dashResetLayout:hover { background:var(--primary); }
         #dashResetLayout.visible { display:flex; }
     </style>
-    <link rel="stylesheet" href="archive.css?v=20261110-compact-toolbar">
+    <link rel="stylesheet" href="archive.css?v=20261110-calendar-title">
 </head>
 <body>
 
@@ -2151,7 +2151,7 @@ function calDayClick(dateStr) {
             <div class="cal-dd-item">
                 <span class="dd-badge dd-${e.type}"><i class="fa-solid ${typeIcon[e.type]||'fa-minus'}"></i> ${typeLabel[e.type]||''}</span>
                 <span class="tag tag-${CAT_CLASS[e.r.category]||'movie'}" style="flex-shrink:0">${e.r.category}</span>
-                <span class="dd-title">${esc(e.r.title)}</span>
+                <button type="button" class="dd-title" data-record-id="${esc(e.r.id)}" onclick="openDetailModal(this.dataset.recordId)">${esc(e.r.title)}</button>
                 ${e.note?`<span class="dd-note">${esc(e.note)}</span>`:''}
             </div>`).join('');
     }
