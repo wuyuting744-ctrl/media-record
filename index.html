@@ -904,7 +904,7 @@
         .alert-filter-banner.red-banner    { background:rgba(212,168,168,0.18); border-color:rgba(212,168,168,0.50); color:rgba(40,32,60,0.80); }
 
         /* ── Network full modal ── */
-        .nfm-modal { width:80vw !important; max-width:80vw !important; height:87.5vh !important; max-height:87.5vh !important; display:flex; flex-direction:column; }
+        .nfm-modal { width:90vw !important; max-width:90vw !important; height:87.5vh !important; max-height:87.5vh !important; display:flex; flex-direction:column; }
         .nfm-body  { flex:1; overflow:hidden; position:relative; border-radius:var(--radius-sm); }
         #chartNetworkFull { display:block; width:100%; height:100%; cursor:grab; }
         #chartNetworkFull:active { cursor:grabbing; }
@@ -1021,7 +1021,7 @@
         #dashResetLayout:hover { background:var(--primary); }
         #dashResetLayout.visible { display:flex; }
     </style>
-    <link rel="stylesheet" href="archive.css?v=20261110-even-toolbar">
+    <link rel="stylesheet" href="archive.css?v=20261110-network-zoom">
 </head>
 <body>
 
@@ -3763,12 +3763,12 @@ function filterByNetworkSel() {
 
 /* ── Network Full Modal (pan + hover + click) ── */
 let _nfmNodes=[], _nfmEdges=[], _nfmIdMap={};
-let _nfmPanX=0, _nfmPanY=0, _nfmHov=null, _nfmSel=null;
+let _nfmPanX=0, _nfmPanY=0, _nfmZoom=1, _nfmHov=null, _nfmSel=null;
 let _nfmFW=0, _nfmFH=0, _nfmDpr=1;
 
 function showNetworkFullModal() {
     if (!networkData?.nodes?.length) return;
-    _nfmPanX=0; _nfmPanY=0; _nfmHov=null; _nfmSel=null;
+    _nfmPanX=0; _nfmPanY=0; _nfmZoom=1; _nfmHov=null; _nfmSel=null;
     showModal('networkFullModal');
     requestAnimationFrame(() => requestAnimationFrame(() => _initNfm()));
 }
@@ -3798,6 +3798,7 @@ function _drawNfm() {
     ctx.clearRect(0,0,_nfmFW,_nfmFH);
     ctx.save();
     ctx.translate(_nfmPanX, _nfmPanY);
+    ctx.scale(_nfmZoom,_nfmZoom);
 
     const aId = _nfmSel||_nfmHov;
     const nbrs = new Set();
@@ -3813,14 +3814,14 @@ function _drawNfm() {
 
     _nfmNodes.forEach(nd=>{
         const isAct=nd.id===aId, isNbr=nbrs.has(nd.id)&&!isAct, faded=aId&&!nbrs.has(nd.id);
-        const r=isAct?16:isNbr?12:8;
+        const r=isAct?64:isNbr?40:8;
         ctx.globalAlpha=faded?0.16:1;
         ctx.beginPath(); ctx.arc(nd.x,nd.y,r,0,Math.PI*2);
         ctx.fillStyle=CAT_BG[nd.category]||'#f0ece8'; ctx.fill();
         if (!aId||nbrs.has(nd.id)) {
             const lbl=nd.title.length>9?nd.title.slice(0,8)+'…':nd.title;
             ctx.fillStyle='#2c2010';
-            ctx.font=(isAct?'bold ':'')+((11+(isAct?4:isNbr?2:0))*96/72)+'px -apple-system,sans-serif';
+            ctx.font=(isAct?'bold ':'')+((13+(isAct?10:isNbr?6:0))*96/72)+'px -apple-system,sans-serif';
             ctx.textAlign='center'; ctx.textBaseline='top';
             ctx.fillText(lbl,nd.x,nd.y+r+4);
         }
@@ -3833,37 +3834,30 @@ function _nfmHit(x,y) {
     const active=_nfmSel||_nfmHov;
     const neighbors=new Set();
     _nfmEdges.forEach(e=>{if(e.from===active)neighbors.add(e.to);if(e.to===active)neighbors.add(e.from);});
-    return [..._nfmNodes].reverse().find(n=>Math.hypot(n.x-x,n.y-y)<=(n.id===active?16:neighbors.has(n.id)?12:8)+3);
+    // Prefer the closest center when enlarged circles overlap.
+    return _nfmNodes.filter(n=>Math.hypot(n.x-x,n.y-y)<=(n.id===active?64:neighbors.has(n.id)?40:8)+3/_nfmZoom)
+        .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y))[0];
 }
 function _setupNfmEvents(fc) {
     fc.onmousemove=fc.onmousedown=fc.onmouseup=fc.onmouseleave=fc.onclick=fc.onwheel=null;
     let gesture=null;
-    const toWorld=e=>{
-        const r=fc.getBoundingClientRect();
-        return {x:(e.clientX-r.left)*(_nfmFW/r.width)-_nfmPanX,
-                y:(e.clientY-r.top)*(_nfmFH/r.height)-_nfmPanY};
-    };
+    const toCanvas=e=>{const r=fc.getBoundingClientRect();return {x:(e.clientX-r.left)*_nfmFW/r.width,y:(e.clientY-r.top)*_nfmFH/r.height};};
+    const toWorld=e=>{const pos=toCanvas(e);return {x:(pos.x-_nfmPanX)/_nfmZoom,y:(pos.y-_nfmPanY)/_nfmZoom};};
     fc.onpointerdown=e=>{
         if(e.button!==0)return;
-        const pos=toWorld(e),node=_nfmHit(pos.x,pos.y);
-        gesture={node,startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,
-            offsetX:node?node.x-pos.x:0,offsetY:node?node.y-pos.y:0,dragged:false};
+        e.preventDefault();const pos=toWorld(e),node=_nfmHit(pos.x,pos.y);
+        gesture={node,startX:e.clientX,startY:e.clientY,offsetX:node?node.x-pos.x:0,offsetY:node?node.y-pos.y:0,dragged:false};
         fc.setPointerCapture(e.pointerId);hideHeatmapTip();
     };
     fc.onpointermove=e=>{
         if(gesture){
-            const r=fc.getBoundingClientRect();
             if(Math.hypot(e.clientX-gesture.startX,e.clientY-gesture.startY)>3)gesture.dragged=true;
-            if(gesture.dragged){
-                if(gesture.node){const pos=toWorld(e);gesture.node.x=pos.x+gesture.offsetX;gesture.node.y=pos.y+gesture.offsetY;}
-                else {_nfmPanX+=(e.clientX-gesture.lastX)*_nfmFW/r.width;_nfmPanY+=(e.clientY-gesture.lastY)*_nfmFH/r.height;}
-                fc.style.cursor='grabbing';_drawNfm();
-            }
-            gesture.lastX=e.clientX;gesture.lastY=e.clientY;return;
+            if(gesture.dragged&&gesture.node){const pos=toWorld(e);gesture.node.x=pos.x+gesture.offsetX;gesture.node.y=pos.y+gesture.offsetY;fc.style.cursor='grabbing';_drawNfm();}
+            return;
         }
         const {x,y}=toWorld(e),hit=_nfmHit(x,y);
         if((hit?.id||null)!==_nfmHov){_nfmHov=hit?.id||null;_drawNfm();}
-        fc.style.cursor=hit?'pointer':'grab';
+        fc.style.cursor=hit?'grab':'default';
         if(hit)showHeatmapTip(e,`《${hit.title}》 ${hit.category}${hit.rating>0?' · '+hit.rating+'分':''}`);
         else hideHeatmapTip();
     };
@@ -3871,12 +3865,19 @@ function _setupNfmEvents(fc) {
         if(!gesture)return;
         if(!gesture.dragged){_nfmSel=gesture.node?.id||null;_nfmHov=gesture.node?.id||null;}
         gesture=null;if(fc.hasPointerCapture(e.pointerId))fc.releasePointerCapture(e.pointerId);
-        fc.style.cursor='grab';_drawNfm();
+        fc.style.cursor='default';_drawNfm();
     };
-    fc.onpointercancel=e=>{gesture=null;_nfmHov=null;hideHeatmapTip();_drawNfm();};
-    fc.onpointerleave=()=>{if(!gesture){_nfmHov=null;hideHeatmapTip();_drawNfm();fc.style.cursor='grab';}};
-    fc.onwheel=e=>{e.preventDefault();_nfmPanX-=e.deltaX;_nfmPanY-=e.deltaY;_drawNfm();};
-    fc.style.touchAction='none';fc.style.cursor='grab';
+    fc.onpointercancel=()=>{gesture=null;_nfmHov=null;hideHeatmapTip();_drawNfm();};
+    fc.onpointerleave=()=>{if(!gesture){_nfmHov=null;hideHeatmapTip();_drawNfm();fc.style.cursor='default';}};
+    fc.onwheel=e=>{
+        e.preventDefault();if(gesture)return;
+        const pos=toCanvas(e),world=toWorld(e);
+        const delta=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?_nfmFH:1);
+        _nfmZoom=Math.max(.2,Math.min(5,_nfmZoom*Math.exp(-delta*.0015)));
+        _nfmPanX=pos.x-world.x*_nfmZoom;_nfmPanY=pos.y-world.y*_nfmZoom;
+        hideHeatmapTip();_drawNfm();
+    };
+    fc.style.touchAction='none';fc.style.cursor='default';
 }
 
 function clearNetworkSel() {
