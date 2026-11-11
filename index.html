@@ -1021,7 +1021,7 @@
         #dashResetLayout:hover { background:var(--primary); }
         #dashResetLayout.visible { display:flex; }
     </style>
-    <link rel="stylesheet" href="archive.css?v=20261112-network-spacing">
+    <link rel="stylesheet" href="archive.css?v=20261112-network-organic">
 </head>
 <body>
 
@@ -3800,19 +3800,21 @@ function _nfmFootprint(node) {
     return {w:Math.max(64,ctx.measureText(label).width)+28,h:64+4+19*96/72+28};
 }
 function _spaceNfmNodes() {
+    if(!_nfmNodes.length)return;
+    // Keep the force layout's organic radial shape and expand it before collision avoidance.
+    const centerX=_nfmFW/2,centerY=_nfmFH/2;
     const footprints=_nfmNodes.map(_nfmFootprint);
-    const total=footprints.reduce((s,b)=>s+b.w*b.h,0);
-    const target=Math.max(_nfmFW-40,Math.sqrt(total*_nfmFW/_nfmFH));
-    let x=20,y=20,rowHeight=0,maxX=0;
-    _nfmNodes.sort((a,b)=>a.y-b.y||a.x-b.x).forEach(node=>{
-        const box=_nfmFootprint(node);
-        if(x>20&&x+box.w>target){x=20;y+=rowHeight;rowHeight=0;}
-        node.x=x+box.w/2;node.y=y+46;
-        x+=box.w;maxX=Math.max(maxX,x);rowHeight=Math.max(rowHeight,box.h);
-    });
-    const height=y+rowHeight+20,width=maxX+20;
-    _nfmZoom=Math.min(1,(_nfmFW-20)/width,(_nfmFH-20)/height);
-    _nfmPanX=(_nfmFW-width*_nfmZoom)/2;_nfmPanY=(_nfmFH-height*_nfmZoom)/2;
+    const area=footprints.reduce((sum,box)=>sum+box.w*box.h,0);
+    const spread=Math.max(1.25,Math.sqrt(area/(_nfmFW*_nfmFH)) * 1.65);
+    _nfmNodes.forEach(node=>{node.x=centerX+(node.x-centerX)*spread;node.y=centerY+(node.y-centerY)*spread;});
+    _separateNfmNodes(null);
+    const left=Math.min(..._nfmNodes.map((n,i)=>n.x-footprints[i].w/2))-24;
+    const right=Math.max(..._nfmNodes.map((n,i)=>n.x+footprints[i].w/2))+24;
+    const top=Math.min(..._nfmNodes.map(n=>n.y-46))-24;
+    const bottom=Math.max(..._nfmNodes.map((n,i)=>n.y-46+footprints[i].h))+24;
+    _nfmZoom=Math.min(1,(_nfmFW-20)/(right-left),(_nfmFH-20)/(bottom-top));
+    _nfmPanX=(_nfmFW-(right-left)*_nfmZoom)/2-left*_nfmZoom;
+    _nfmPanY=(_nfmFH-(bottom-top)*_nfmZoom)/2-top*_nfmZoom;
 }
 function _separateNfmNodes(anchor) {
     // During dragging keep the grabbed node under the pointer and move obstructing neighbors.
