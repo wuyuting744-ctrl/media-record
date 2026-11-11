@@ -1021,7 +1021,7 @@
         #dashResetLayout:hover { background:var(--primary); }
         #dashResetLayout.visible { display:flex; }
     </style>
-    <link rel="stylesheet" href="archive.css?v=20261112-toolbar-order">
+    <link rel="stylesheet" href="archive.css?v=20261112-network-spacing">
 </head>
 <body>
 
@@ -3786,9 +3786,49 @@ function _initNfm() {
     _nfmNodes = networkData.nodes.map(n=>({...n,vx:0,vy:0}));
     _nfmEdges = networkData.edges;
     forceLayout(_nfmNodes, _nfmEdges, _nfmFW, _nfmFH);
+    _spaceNfmNodes();
     _nfmIdMap={}; _nfmNodes.forEach(n=>{ _nfmIdMap[n.id]=n; });
     _drawNfm();
     _setupNfmEvents(fc);
+}
+
+// Reserve the largest hover circle and label for every node, so hover never crowds neighbors.
+function _nfmFootprint(node) {
+    const ctx=document.getElementById('chartNetworkFull').getContext('2d');
+    ctx.font='bold '+(19*96/72)+'px -apple-system,sans-serif';
+    const label=node.title.length>9?node.title.slice(0,8)+'…':node.title;
+    return {w:Math.max(64,ctx.measureText(label).width)+28,h:64+4+19*96/72+28};
+}
+function _spaceNfmNodes() {
+    const footprints=_nfmNodes.map(_nfmFootprint);
+    const total=footprints.reduce((s,b)=>s+b.w*b.h,0);
+    const target=Math.max(_nfmFW-40,Math.sqrt(total*_nfmFW/_nfmFH));
+    let x=20,y=20,rowHeight=0,maxX=0;
+    _nfmNodes.sort((a,b)=>a.y-b.y||a.x-b.x).forEach(node=>{
+        const box=_nfmFootprint(node);
+        if(x>20&&x+box.w>target){x=20;y+=rowHeight;rowHeight=0;}
+        node.x=x+box.w/2;node.y=y+46;
+        x+=box.w;maxX=Math.max(maxX,x);rowHeight=Math.max(rowHeight,box.h);
+    });
+    const height=y+rowHeight+20,width=maxX+20;
+    _nfmZoom=Math.min(1,(_nfmFW-20)/width,(_nfmFH-20)/height);
+    _nfmPanX=(_nfmFW-width*_nfmZoom)/2;_nfmPanY=(_nfmFH-height*_nfmZoom)/2;
+}
+function _separateNfmNodes(anchor) {
+    // During dragging keep the grabbed node under the pointer and move obstructing neighbors.
+    const boxes=_nfmNodes.map(_nfmFootprint);
+    for(let pass=0;pass<240;pass++){
+        let moved=false;
+        for(let i=0;i<_nfmNodes.length;i++)for(let j=i+1;j<_nfmNodes.length;j++){
+            const a=_nfmNodes[i],b=_nfmNodes[j],dx=b.x-a.x,dy=b.y-a.y;
+            const ox=(boxes[i].w+boxes[j].w)/2-Math.abs(dx),oy=(boxes[i].h+boxes[j].h)/2-Math.abs(dy);
+            if(ox<=0||oy<=0)continue;
+            const axis=ox<oy?'x':'y',delta=((axis==='x'?dx:dy)>=0?1:-1)*((axis==='x'?ox:oy)+1);
+            if(a===anchor)b[axis]+=delta;else if(b===anchor)a[axis]-=delta;
+            else {a[axis]-=delta/2;b[axis]+=delta/2;}moved=true;
+        }
+        if(!moved)break;
+    }
 }
 
 function _drawNfm() {
@@ -3814,14 +3854,14 @@ function _drawNfm() {
 
     _nfmNodes.forEach(nd=>{
         const isAct=nd.id===aId, isNbr=nbrs.has(nd.id)&&!isAct, faded=aId&&!nbrs.has(nd.id);
-        const r=isAct?64:isNbr?40:8;
+        const r=isAct?32:isNbr?16:8;
         ctx.globalAlpha=faded?0.16:1;
         ctx.beginPath(); ctx.arc(nd.x,nd.y,r,0,Math.PI*2);
         ctx.fillStyle=CAT_BG[nd.category]||'#f0ece8'; ctx.fill();
         if (!aId||nbrs.has(nd.id)) {
             const lbl=nd.title.length>9?nd.title.slice(0,8)+'…':nd.title;
             ctx.fillStyle='#2c2010';
-            ctx.font=(isAct?'bold ':'')+((13+(isAct?10:isNbr?6:0))*96/72)+'px -apple-system,sans-serif';
+            ctx.font=(isAct?'bold ':'')+((13+(isAct?6:isNbr?4:0))*96/72)+'px -apple-system,sans-serif';
             ctx.textAlign='center'; ctx.textBaseline='top';
             ctx.fillText(lbl,nd.x,nd.y+r+4);
         }
@@ -3835,7 +3875,7 @@ function _nfmHit(x,y) {
     const neighbors=new Set();
     _nfmEdges.forEach(e=>{if(e.from===active)neighbors.add(e.to);if(e.to===active)neighbors.add(e.from);});
     // Prefer the closest center when enlarged circles overlap.
-    return _nfmNodes.filter(n=>Math.hypot(n.x-x,n.y-y)<=(n.id===active?64:neighbors.has(n.id)?40:8)+3/_nfmZoom)
+    return _nfmNodes.filter(n=>Math.hypot(n.x-x,n.y-y)<=(n.id===active?32:neighbors.has(n.id)?16:8)+3/_nfmZoom)
         .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y))[0];
 }
 function _setupNfmEvents(fc) {
@@ -3852,7 +3892,7 @@ function _setupNfmEvents(fc) {
     fc.onpointermove=e=>{
         if(gesture){
             if(Math.hypot(e.clientX-gesture.startX,e.clientY-gesture.startY)>3)gesture.dragged=true;
-            if(gesture.dragged&&gesture.node){const pos=toWorld(e);gesture.node.x=pos.x+gesture.offsetX;gesture.node.y=pos.y+gesture.offsetY;fc.style.cursor='grabbing';_drawNfm();}
+            if(gesture.dragged&&gesture.node){const pos=toWorld(e);gesture.node.x=pos.x+gesture.offsetX;gesture.node.y=pos.y+gesture.offsetY;_separateNfmNodes(gesture.node);fc.style.cursor='grabbing';_drawNfm();}
             return;
         }
         const {x,y}=toWorld(e),hit=_nfmHit(x,y);
