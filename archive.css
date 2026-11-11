@@ -281,3 +281,10 @@ body{--nav-width:260px}
 
 #clearFiltersBtn,#manageBtn{border:1px solid var(--border)!important;background:#fffefa!important;border-radius:9px!important;color:var(--text)}
 #clearFiltersBtn:hover,#manageBtn:hover{border-color:var(--primary-light)!important;background:#fffefa!important}
+
+#clearFiltersBtn,#manageBtn{width:44px;min-width:44px;height:44px;padding:0;justify-content:center}
+#clearFiltersBtn svg,#manageBtn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.toolbar .search-wrap{flex-basis:224.78125px}
+@media(min-width:1510px){
+ .toolbar.album-toolbar{--field-unit:calc((100% - 106.666667px - 264.78125px)/7.6);grid-template-columns:minmax(0,1fr) var(--field-unit) calc(var(--field-unit)*1.4) repeat(3,var(--field-unit)) repeat(5,44px)}
+}
