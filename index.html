@@ -1021,7 +1021,7 @@
         #dashResetLayout:hover { background:var(--primary); }
         #dashResetLayout.visible { display:flex; }
     </style>
-    <link rel="stylesheet" href="archive.css?v=20261112-network-organic">
+    <link rel="stylesheet" href="archive.css?v=20261112-network-adaptive">
 </head>
 <body>
 
@@ -3765,6 +3765,7 @@ function filterByNetworkSel() {
 let _nfmNodes=[], _nfmEdges=[], _nfmIdMap={};
 let _nfmPanX=0, _nfmPanY=0, _nfmZoom=1, _nfmHov=null, _nfmSel=null;
 let _nfmFW=0, _nfmFH=0, _nfmDpr=1;
+let _nfmBasePositions=new Map(),_nfmLayoutActive=null;
 
 function showNetworkFullModal() {
     if (!networkData?.nodes?.length) return;
@@ -3792,12 +3793,23 @@ function _initNfm() {
     _setupNfmEvents(fc);
 }
 
-// Reserve the largest hover circle and label for every node, so hover never crowds neighbors.
+// Default nodes reserve only their normal label; hover expands just the active neighborhood.
 function _nfmFootprint(node) {
+    const active=_nfmSel||_nfmHov;
+    const selected=node.id===active;
+    const neighbor=!!active&&_nfmEdges.some(e=>(e.from===active&&e.to===node.id)||(e.to===active&&e.from===node.id));
+    const radius=selected?32:neighbor?16:8,font=(13+(selected?6:neighbor?4:0))*96/72;
     const ctx=document.getElementById('chartNetworkFull').getContext('2d');
-    ctx.font='bold '+(19*96/72)+'px -apple-system,sans-serif';
+    ctx.font=(selected?'bold ':'')+font+'px -apple-system,sans-serif';
     const label=node.title.length>9?node.title.slice(0,8)+'…':node.title;
-    return {w:Math.max(64,ctx.measureText(label).width)+28,h:64+4+19*96/72+28};
+    return {w:Math.max(radius*2,ctx.measureText(label).width)+14,h:radius*2+4+font+14};
+}
+function _updateNfmSpacing() {
+    const active=_nfmSel||_nfmHov;
+    if(active===_nfmLayoutActive)return;
+    _nfmNodes.forEach(n=>{const pos=_nfmBasePositions.get(n.id);if(pos){n.x=pos.x;n.y=pos.y;}});
+    _separateNfmNodes(active?_nfmIdMap[active]:null);
+    _nfmLayoutActive=active;
 }
 function _spaceNfmNodes() {
     if(!_nfmNodes.length)return;
@@ -3805,7 +3817,7 @@ function _spaceNfmNodes() {
     const centerX=_nfmFW/2,centerY=_nfmFH/2;
     const footprints=_nfmNodes.map(_nfmFootprint);
     const area=footprints.reduce((sum,box)=>sum+box.w*box.h,0);
-    const spread=Math.max(1.25,Math.sqrt(area/(_nfmFW*_nfmFH)) * 1.65);
+    const spread=Math.max(.85,Math.sqrt(area/(_nfmFW*_nfmFH)) * 1.1);
     _nfmNodes.forEach(node=>{node.x=centerX+(node.x-centerX)*spread;node.y=centerY+(node.y-centerY)*spread;});
     _separateNfmNodes(null);
     const left=Math.min(..._nfmNodes.map((n,i)=>n.x-footprints[i].w/2))-24;
@@ -3815,6 +3827,7 @@ function _spaceNfmNodes() {
     _nfmZoom=Math.min(1,(_nfmFW-20)/(right-left),(_nfmFH-20)/(bottom-top));
     _nfmPanX=(_nfmFW-(right-left)*_nfmZoom)/2-left*_nfmZoom;
     _nfmPanY=(_nfmFH-(bottom-top)*_nfmZoom)/2-top*_nfmZoom;
+    _nfmBasePositions=new Map(_nfmNodes.map(n=>[n.id,{x:n.x,y:n.y}]));_nfmLayoutActive=null;
 }
 function _separateNfmNodes(anchor) {
     // During dragging keep the grabbed node under the pointer and move obstructing neighbors.
@@ -3834,6 +3847,7 @@ function _separateNfmNodes(anchor) {
 }
 
 function _drawNfm() {
+    _updateNfmSpacing();
     const fc = document.getElementById('chartNetworkFull'); if (!fc) return;
     const ctx = fc.getContext('2d');
     ctx.setTransform(_nfmDpr,0,0,_nfmDpr,0,0);
@@ -3906,6 +3920,7 @@ function _setupNfmEvents(fc) {
     fc.onpointerup=e=>{
         if(!gesture)return;
         if(!gesture.dragged){_nfmSel=gesture.node?.id||null;_nfmHov=gesture.node?.id||null;}
+        if(gesture.dragged&&gesture.node){_nfmBasePositions.set(gesture.node.id,{x:gesture.node.x,y:gesture.node.y});}
         gesture=null;if(fc.hasPointerCapture(e.pointerId))fc.releasePointerCapture(e.pointerId);
         fc.style.cursor='default';_drawNfm();
     };
