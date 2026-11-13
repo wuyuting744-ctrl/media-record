@@ -1710,7 +1710,11 @@ function applyFilters() {
         if (status    && r.status   !== status)                          return false;
         if (companion) {
             const people = (r.companions || []).filter(name => typeof name === 'string' && name.trim());
-            const matches = people.includes(companion) || (companion === '自己' && people.length === 0);
+            const selfValue = PREDEFINED_COMPANIONS.find(option => option.label === '自己')?.val;
+            const isSelf = companion === selfValue || companion === '自己';
+            const matches = isSelf
+                ? people.length === 0 || people.includes(selfValue) || people.includes('自己')
+                : people.includes(companion);
             if (!matches) return false;
         }
         if (filterGenreValue && !(r.genres||[]).some(g => g.includes(filterGenreValue))) return false;
