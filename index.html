@@ -1708,7 +1708,11 @@ function applyFilters() {
         if (q && !r.title.toLowerCase().includes(q) && !(r.notes||'').toLowerCase().includes(q)) return false;
         if (cat       && r.category !== cat)                             return false;
         if (status    && r.status   !== status)                          return false;
-        if (companion && !(r.companions||[]).includes(companion))         return false;
+        if (companion) {
+            const people = (r.companions || []).filter(name => typeof name === 'string' && name.trim());
+            const matches = people.includes(companion) || (companion === '自己' && people.length === 0);
+            if (!matches) return false;
+        }
         if (filterGenreValue && !(r.genres||[]).some(g => g.includes(filterGenreValue))) return false;
         if (date) {
             const inSeg = (r.watchDates||[]).some(seg => {
